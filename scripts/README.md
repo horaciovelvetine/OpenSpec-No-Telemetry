@@ -1,32 +1,7 @@
 # OpenSpec Scripts
 
-Utility scripts for OpenSpec maintenance and development.
-
-## update-flake.sh
-
-Updates `flake.nix` pnpm dependency hash automatically.
-
-**When to use**: After updating dependencies (`pnpm install`, `pnpm update`).
-
-**Usage**:
-```bash
-./scripts/update-flake.sh
-```
-
-**What it does**:
-1. Reads version from `package.json` (dynamically used by `flake.nix`)
-2. Automatically determines the correct pnpm dependency hash
-3. Updates the hash in `flake.nix`
-4. Verifies the build succeeds
-
-**Example workflow**:
-```bash
-# After dependency updates
-pnpm install
-./scripts/update-flake.sh
-git add flake.nix
-git commit -m "chore: update flake.nix dependency hash"
-```
+Utility scripts for OpenSpec maintenance and development. The fork's build,
+audit, and packaging scripts live in `fork/`.
 
 ## regen-parity-hashes.mjs
 
@@ -66,7 +41,3 @@ The rewriting lives in `parity-hash-shared.mjs` so its guards can be exercised
 against fabricated input — see `test/core/templates/parity-hash-shared.test.ts`.
 A test that ran this script for real would rewrite the repository's own parity
 test file mid-suite.
-
-## pack-version-check.mjs
-
-Validates package version consistency before publishing.
