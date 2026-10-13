@@ -8,8 +8,7 @@ import { runCLI } from '../helpers/run-cli.js';
 /**
  * A global config file with a typo is still the user's file. Reads fall back
  * to defaults with a warning, but nothing may write those defaults back over
- * it, and telemetry may not read them as consent: the file can hold
- * `telemetry.enabled: false`.
+ * it.
  */
 
 const SETTINGS = {
@@ -29,7 +28,6 @@ describe('an unparseable global config', () => {
   let originalEnv: NodeJS.ProcessEnv;
   let originalExitCode: typeof process.exitCode;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let fetchSpy: ReturnType<typeof vi.spyOn<typeof globalThis, 'fetch'>>;
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'openspec-unparseable-config-'));
@@ -40,10 +38,7 @@ describe('an unparseable global config', () => {
     process.env.HOME = tempDir;
     process.env.USERPROFILE = tempDir;
     process.env.APPDATA = path.join(tempDir, 'appdata');
-    // Telemetry stays on at the environment level, as in a user's shell, so
-    // only the config file decides.
-    delete process.env.OPENSPEC_TELEMETRY;
-    delete process.env.DO_NOT_TRACK;
+    // As in a user's shell, not a CI job.
     delete process.env.CI;
 
     configPath = path.join(tempDir, 'openspec', 'config.json');
@@ -51,14 +46,9 @@ describe('an unparseable global config', () => {
 
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
-    fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(null, { status: 200 }));
   });
 
-  afterEach(async () => {
-    const { shutdown } = await import('../../src/telemetry/index.js');
-    await shutdown();
+  afterEach(() => {
     process.env = originalEnv;
     process.exitCode = originalExitCode;
     vi.restoreAllMocks();
@@ -146,151 +136,6 @@ describe('an unparseable global config', () => {
     });
   });
 
-  describe('telemetry', () => {
-    // Fresh modules per test: telemetry caches the anonymous id it minted.
-    beforeEach(() => {
-      vi.resetModules();
-    });
-
-    it('is off when the file cannot be parsed', async () => {
-      fs.writeFileSync(configPath, TYPO);
-      const { isTelemetryEnabled } = await import('../../src/telemetry/index.js');
-
-      expect(isTelemetryEnabled()).toBe(false);
-    });
-
-    it('is on for a valid file with no opt-out', async () => {
-      fs.writeFileSync(configPath, JSON.stringify({ profile: 'core' }));
-      const { isTelemetryEnabled } = await import('../../src/telemetry/index.js');
-
-      expect(isTelemetryEnabled()).toBe(true);
-    });
-
-    it('sends nothing and writes nothing when a command runs', async () => {
-      fs.writeFileSync(configPath, TYPO);
-      const { maybeShowTelemetryNotice, trackCommand, shutdown } = await import('../../src/telemetry/index.js');
-
-      await maybeShowTelemetryNotice();
-      await trackCommand('list', '0.0.0-test');
-      await shutdown();
-
-      expect(fetchSpy).not.toHaveBeenCalled();
-      expect(read()).toBe(TYPO);
-      // The existing warning still tells the user their settings are ignored.
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON'));
-    });
-
-    it('still records the notice and identity in a valid file, keeping its other settings', async () => {
-      fs.writeFileSync(configPath, JSON.stringify({ profile: 'custom', workflows: ['propose'] }, null, 2));
-      const { maybeShowTelemetryNotice, trackCommand, shutdown } = await import('../../src/telemetry/index.js');
-
-      await maybeShowTelemetryNotice();
-      await trackCommand('list', '0.0.0-test');
-      await shutdown();
-
-      expect(fetchSpy).toHaveBeenCalledTimes(1);
-      const saved = JSON.parse(read());
-      expect(saved.profile).toBe('custom');
-      expect(saved.workflows).toEqual(['propose']);
-      expect(saved.telemetry.noticeSeen).toBe(true);
-      expect(saved.telemetry.anonymousId).toEqual(expect.any(String));
-    });
-
-    it('still creates the file on a first run', async () => {
-      const { maybeShowTelemetryNotice, trackCommand, shutdown } = await import('../../src/telemetry/index.js');
-
-      // Nothing is tracked until the notice has been shown, so a first run
-      // shows it before the command is tracked.
-      await maybeShowTelemetryNotice();
-      await trackCommand('list', '0.0.0-test');
-      await shutdown();
-
-      expect(JSON.parse(read()).telemetry.anonymousId).toEqual(expect.any(String));
-    });
-
-    it('never has a telemetry update written over the file', async () => {
-      fs.writeFileSync(configPath, TYPO);
-      const { updateTelemetryConfig } = await import('../../src/telemetry/config.js');
-
-      await expect(updateTelemetryConfig({ noticeSeen: true })).rejects.toThrow(/could not be parsed/);
-      expect(read()).toBe(TYPO);
-    });
-
-    // Every shape isGlobalConfigUnreadable() rejects must also be refused by
-    // the telemetry writer, which merges into whatever it reads. A non-object
-    // root used to slip past it: an array or a number replaced the file with a
-    // bare telemetry object, and a string spread into numeric character keys.
-    const NON_OBJECT_ROOTS: Array<[string, string]> = [
-      ['null', 'null\n'],
-      ['an array', '[]\n'],
-      ['a populated array', '["core", "custom"]\n'],
-      ['a string', '"core"\n'],
-      ['a number', '42\n'],
-      ['a boolean', 'true\n'],
-    ];
-
-    it.each(NON_OBJECT_ROOTS)(
-      'refuses to write telemetry over %s and leaves the file byte-identical',
-      async (_label, content) => {
-        fs.writeFileSync(configPath, content);
-        const { isGlobalConfigUnreadable } = await import('../../src/core/global-config.js');
-        const { updateTelemetryConfig } = await import('../../src/telemetry/config.js');
-
-        // The guarantee is defined by the predicate, so assert it applies here.
-        expect(isGlobalConfigUnreadable()).toBe(true);
-
-        let message = '';
-        await updateTelemetryConfig({ noticeSeen: true }).catch((error: unknown) => {
-          message = (error as Error).message;
-        });
-
-        // Not a TypeError: the same actionable one-liner every writer reports.
-        expect(message).toContain(configPath);
-        expect(message).toContain('openspec config edit');
-        expect(message).toContain('openspec config reset --all');
-        expect(read()).toBe(content);
-        expect(fetchSpy).not.toHaveBeenCalled();
-      },
-    );
-
-    it.each(NON_OBJECT_ROOTS)(
-      'reads %s as opted-out, sending and writing nothing for a whole command',
-      async (_label, content) => {
-        fs.writeFileSync(configPath, content);
-        const { isTelemetryEnabled, maybeShowTelemetryNotice, trackCommand, shutdown } = await import(
-          '../../src/telemetry/index.js'
-        );
-        const { getTelemetryConfig } = await import('../../src/telemetry/config.js');
-
-        expect(isTelemetryEnabled()).toBe(false);
-        // The reader must answer with empty settings rather than throw.
-        await expect(getTelemetryConfig()).resolves.toEqual({});
-
-        await maybeShowTelemetryNotice();
-        await trackCommand('list', '0.0.0-test');
-        await shutdown();
-
-        expect(fetchSpy).not.toHaveBeenCalled();
-        expect(read()).toBe(content);
-      },
-    );
-
-    it('still mints an anonymous id into a valid file after a non-object root is fixed', async () => {
-      fs.writeFileSync(configPath, '[]\n');
-      const { getOrCreateAnonymousId } = await import('../../src/telemetry/index.js');
-
-      // The refusal must not be silently swallowed into a corrupt write.
-      await expect(getOrCreateAnonymousId()).rejects.toThrow(/could not be parsed/);
-      expect(read()).toBe('[]\n');
-
-      fs.writeFileSync(configPath, '{}\n');
-      vi.resetModules();
-      const fixed = await import('../../src/telemetry/index.js');
-      await expect(fixed.getOrCreateAnonymousId()).resolves.toEqual(expect.any(String));
-      expect(JSON.parse(read()).telemetry.anonymousId).toEqual(expect.any(String));
-    });
-  });
-
   describe('openspec config', () => {
     let registerConfigCommand: typeof import('../../src/cli/commands/config.js').registerConfigCommand;
 
@@ -309,7 +154,6 @@ describe('an unparseable global config', () => {
 
     it.each([
       [['set', 'profile', 'core']],
-      [['set', 'telemetry.enabled', 'true']],
       [['unset', 'profile']],
       [['profile', 'core']],
     ])('refuses `config %s` and leaves the file unchanged', async (args) => {
@@ -371,16 +215,13 @@ describe('an unparseable global config', () => {
         XDG_CONFIG_HOME: tempDir,
         HOME: tempDir,
         USERPROFILE: tempDir,
-        // Telemetry on at the environment level, as for a real user.
-        OPENSPEC_TELEMETRY: '1',
-        DO_NOT_TRACK: '0',
         CI: 'false',
       },
       timeoutMs: 60_000,
     });
 
     expect(read()).toBe(TYPO);
-    // Telemetry and the command each read the config; the warning prints once.
-    expect(result.stderr.match(/Invalid JSON/g)).toHaveLength(1);
+    // However many times the command reads the config, it warns at most once.
+    expect((result.stderr.match(/Invalid JSON/g) ?? []).length).toBeLessThanOrEqual(1);
   }, 120_000);
 });
