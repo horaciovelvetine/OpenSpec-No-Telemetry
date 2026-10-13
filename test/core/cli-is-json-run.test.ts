@@ -5,8 +5,8 @@ import { isJsonRun, isCompletionRun, shouldDeferCompletionTip } from '../../src/
 
 /**
  * Reproduce the three ways `--json` reaches a command in the real CLI, so a
- * future refactor of the telemetry-notice guard can't silently reintroduce
- * first-run stdout pollution for `store --json` / `workset --json <sub>`.
+ * future refactor of the completions-tip deferral can't silently reintroduce
+ * first-run output on JSON runs for `store --json` / `workset --json <sub>`.
  */
 function buildProgram(capture: (command: Command) => void): Command {
   const program = new Command();
