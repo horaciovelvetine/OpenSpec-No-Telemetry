@@ -2,7 +2,7 @@
 	"name": "@fission-ai/openspec",
 	"version": "1.14.0",
 	"private": true,
-	"description": "Private, no-telemetry OpenSpec runtime bundled for DAWN",
+	"description": "Private, no-telemetry OpenSpec runtime bundled for offline consumers",
 	"keywords": [
 		"openspec",
 		"specs",
