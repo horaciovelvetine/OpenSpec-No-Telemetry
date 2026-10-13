@@ -9,12 +9,12 @@ const repoRoot = path.resolve(
 	'..',
 );
 
-// Imported from the build, the way DAWN loads it through the package exports.
+// Imported from the build, the way consumers load it through the package exports.
 async function loadCliKit() {
 	return import(pathToFileURL(path.join(repoRoot, 'dist', 'cli-kit.js')).href);
 }
 
-describe('cli-kit export for DAWN', () => {
+describe('cli-kit export for bundled consumers', () => {
 	it('maps the subpath exports to built files', () => {
 		const pkg = JSON.parse(
 			fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8'),
@@ -35,7 +35,7 @@ describe('cli-kit export for DAWN', () => {
 		);
 	});
 
-	it('exposes the DAWN shim entry without loading the broad package root', async () => {
+	it('exposes the openspec shim entry without loading the broad package root', async () => {
 		const cli = await import(
 			pathToFileURL(path.join(repoRoot, 'dist', 'cli', 'index.js')).href
 		);
@@ -43,7 +43,7 @@ describe('cli-kit export for DAWN', () => {
 		expect(typeof cli.runCli).toBe('function');
 	});
 
-	it('exposes every library DAWN builds its CLI with', async () => {
+	it('exposes every library a consumer CLI can build with', async () => {
 		const kit = await loadCliKit();
 
 		expect(Object.keys(kit).sort()).toEqual([
@@ -52,7 +52,7 @@ describe('cli-kit export for DAWN', () => {
 			'crossSpawn',
 			'loadPrompts',
 		]);
-		expect(new kit.Command('dawn-init').name()).toBe('dawn-init');
+		expect(new kit.Command('acme-init').name()).toBe('acme-init');
 		expect(typeof kit.chalk.bold).toBe('function');
 		const prompts = await kit.loadPrompts();
 		for (const prompt of ['checkbox', 'confirm', 'input', 'select', 'search']) {

@@ -1,5 +1,5 @@
 /**
- * CLI building blocks for programs that bundle this package (DAWN), exposed as
+ * CLI building blocks for programs that bundle this package, exposed as
  * `@fission-ai/openspec/cli-kit`. They are the exact versions OpenSpec ships,
  * so a bundle that carries OpenSpec needs no registry access to build a CLI.
  */
