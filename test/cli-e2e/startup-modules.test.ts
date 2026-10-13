@@ -27,7 +27,6 @@ const COMMAND_IMPLEMENTATIONS: Record<string, string[]> = {
   spec: ['commands/spec.js'],
   validate: ['commands/validate.js'],
   show: ['commands/show.js'],
-  feedback: ['commands/feedback.js'],
   completion: ['commands/completion.js'],
   config: ['commands/config.js'],
   schema: ['commands/schema.js'],
