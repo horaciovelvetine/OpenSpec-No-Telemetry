@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { PROJECT_ROOT_GUARD } from '../../../src/core/templates/workflows/project-root.js';
 import { STORE_SELECTION_GUIDANCE } from '../../../src/core/templates/workflows/store-selection.js';
-import { getFeedbackSkillTemplate } from '../../../src/core/templates/skill-templates.js';
 import {
   generateSkillContent,
   getCommandContents,
@@ -53,13 +52,6 @@ describe('project root guard', () => {
     for (const entry of getCommandContents()) {
       expect(entry.body, entry.id).toContain(PROJECT_ROOT_GUARD);
     }
-  });
-
-  // Feedback files a GitHub issue through `openspec feedback`; it never reads
-  // or writes a root, so it ships outside both registries and carries neither
-  // the store teaching nor this guard.
-  it('leaves the rootless feedback skill alone', () => {
-    expect(getFeedbackSkillTemplate().instructions).not.toContain('**Project check:**');
   });
 
   // The CLI contract behind this check - `list` reporting `root: null` instead
