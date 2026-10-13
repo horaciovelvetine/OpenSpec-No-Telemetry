@@ -93,8 +93,8 @@ export function getCommandPath(command: Command): string {
 }
 
 /**
- * True when the executing command asked for JSON output — used to suppress the
- * first-run telemetry notice so stdout stays a single valid JSON document.
+ * True when the executing command asked for JSON output — used to defer the
+ * first-run completions tip so a JSON run emits nothing incidental.
  *
  * `--json` reaches commands three ways, so a single parsed option is not enough:
  * - declared on the leaf (`openspec status --json`) → `opts().json`
@@ -103,8 +103,7 @@ export function getCommandPath(command: Command): string {
  * - a residual arg on a permissive group that never declares the option
  *   (`openspec store --json`, which detects it from `command.args`) → `args`
  *
- * Suppressing is always safe: the disclosure is only deferred to the next
- * non-JSON run, never lost, whereas printing it on a JSON run corrupts stdout.
+ * Deferring is always safe: the tip moves to the next non-JSON run, never lost.
  */
 export function isJsonRun(command: Command): boolean {
   return (
@@ -146,69 +145,25 @@ program.option('--no-color', 'Disable color output');
 
 program
   .command('version')
-  .description('Report the installed OpenSpec version and update availability')
+  .description('Report the installed OpenSpec version')
   .option('--json', 'Output as JSON')
-  .option('--check', 'Check the registry for a newer version')
-  .action(async (options: { json?: boolean; check?: boolean }) => {
-    const {
-      getCliInstallInfo,
-      checkForCliUpdate,
-      getCliUpdateCommand,
-      canSelfUpgrade,
-      buildVersionReportLines,
-    } = await import('../core/version-check.js');
-    const install = getCliInstallInfo();
-    const update = options.check ? await checkForCliUpdate() : undefined;
-    const command = update?.status === 'available' ? getCliUpdateCommand(install) : null;
-    const output = {
-      schemaVersion: 1,
-      version,
-      install,
-      ...(update
-        ? {
-            update: {
-              ...update,
-              command,
-              canSelfUpgrade:
-                update.status === 'available'
-                  ? canSelfUpgrade(install.location, process.cwd())
-                  : false,
-            },
-          }
-        : {}),
-    };
-
+  .action((options: { json?: boolean }) => {
     if (options.json) {
-      console.log(JSON.stringify(output, null, 2));
+      console.log(JSON.stringify({ schemaVersion: 1, version }, null, 2));
       return;
     }
 
-    console.log(buildVersionReportLines(version, install, update, command).join('\n'));
+    console.log(`OpenSpec ${version}`);
   });
 
-// Apply global flags and telemetry before any command runs
-// Note: preAction receives (thisCommand, actionCommand) where:
-// - thisCommand: the command where hook was added (root program)
-// - actionCommand: the command actually being executed (subcommand)
-program.hook('preAction', async (thisCommand, actionCommand) => {
+// Apply global flags before any command runs
+program.hook('preAction', (thisCommand) => {
   const opts = thisCommand.opts();
   if (opts.color === false) {
     process.env.NO_COLOR = '1';
   }
-
-  // Show first-run telemetry notice (if not seen). It's written to stderr, so it
-  // never pollutes stdout — but --json runs still defer it (see isJsonRun) so the
-  // very first invocation stays free of any incidental output on either stream.
-  const { maybeShowTelemetryNotice, trackCommand } = await import('../telemetry/index.js');
-  await maybeShowTelemetryNotice({ silent: isJsonRun(actionCommand) });
-
-  // Track command execution (use actionCommand to get the actual subcommand)
-  const commandPath = getCommandPath(actionCommand);
-
-  await trackCommand(commandPath, version);
 });
 
-// Shutdown telemetry after command completes
 program.hook('postAction', async (_thisCommand, actionCommand) => {
   // Show the first-run shell-completions tip (on stderr, so piped stdout stays
   // clean). postAction, not preAction: the tip trails the command's own output
@@ -216,17 +171,10 @@ program.hook('postAction', async (_thisCommand, actionCommand) => {
   // screen. Deferred — not consumed — whenever nobody would read it: JSON runs,
   // `openspec completion ...`, and a stderr that is not a terminal (agents and
   // pipes would otherwise silently burn the user's one-shot tip).
-  try {
-    const { maybeShowCompletionTip } = await import('../core/completion-tip.js');
-    await maybeShowCompletionTip({
-      silent: shouldDeferCompletionTip(actionCommand, Boolean(process.stderr.isTTY)),
-    });
-  } finally {
-    // The flush runs even if the hint throws: parse() is synchronous, so a
-    // rejection here has no catch anywhere above it.
-    const { shutdown } = await import('../telemetry/index.js');
-    await shutdown();
-  }
+  const { maybeShowCompletionTip } = await import('../core/completion-tip.js');
+  await maybeShowCompletionTip({
+    silent: shouldDeferCompletionTip(actionCommand, Boolean(process.stderr.isTTY)),
+  });
 });
 
 const availableToolIds = AI_TOOLS
@@ -245,9 +193,7 @@ program
   .option('--force', 'Auto-cleanup legacy files without prompting')
   .option('--profile <profile>', 'Override global config profile (core or custom)')
   .option('--no-animation', 'Show a static welcome screen instead of the animated one')
-  .option('--copilot-cloud', 'Set up GitHub Copilot cloud coding-agent files without prompting')
-  .option('--no-copilot-cloud', 'Skip GitHub Copilot cloud coding-agent files without prompting')
-  .action(async (targetPath = '.', options?: { tools?: string; language?: string; force?: boolean; profile?: string; animation?: boolean; copilotCloud?: boolean }) => {
+  .action(async (targetPath = '.', options?: { tools?: string; language?: string; force?: boolean; profile?: string; animation?: boolean }) => {
     try {
       // Validate that the path is a valid directory
       const resolvedPath = path.resolve(targetPath);
@@ -275,7 +221,6 @@ program
         force: options?.force,
         profile: options?.profile,
         animation: options?.animation,
-        copilotCloud: options?.copilotCloud,
       });
       await initCommand.execute(targetPath);
     } catch (error) {
@@ -311,77 +256,9 @@ program
   .option('--force', 'Force update even when tools are up to date')
   .action(async (targetPath = '.', options?: { force?: boolean }) => {
     try {
-      const [
-        {
-          getInstallDir,
-          isSourceCheckout,
-          getAvailableCliUpdate,
-          shouldOfferUpgrade,
-          displayCliUpdateNote,
-          offerCliUpgrade,
-          rerunUpdateWithUpgradedCli,
-          displayUpgradeCommand,
-        },
-        { isInteractive },
-        { UpdateCommand },
-      ] = await Promise.all([
-        import('../core/version-check.js'),
-        import('../utils/interactive.js'),
-        import('../core/update.js'),
-      ]);
-      const installDir = getInstallDir();
-      // Running from a clone: the version is whatever the branch says, so any
-      // upgrade advice would be noise. Decided before the request, so a
-      // contributor never waits on an answer that gets thrown away.
-      const latestVersion = isSourceCheckout(installDir) ? null : await getAvailableCliUpdate();
-      const announce = latestVersion !== null;
-      // Offer to upgrade first: this process generates files from its own
-      // templates, so upgrading afterwards would leave the old ones on disk.
-      // Both streams must be a terminal — with stdout redirected the question
-      // lands in the file and the user waits at a blank screen forever.
-      const canOffer =
-        announce &&
-        shouldOfferUpgrade({
-          installDir,
-          projectPath: targetPath,
-          interactive: isInteractive(),
-          stdoutIsTty: Boolean(process.stdout.isTTY),
-        });
-
-      let declined = false;
-      if (latestVersion && canOffer) {
-        displayCliUpdateNote(latestVersion, targetPath, { withCommand: false });
-        const outcome = await offerCliUpgrade(latestVersion);
-
-        // Set the code and return rather than process.exit: exiting here would
-        // skip commander's postAction hook, killing the telemetry flush
-        // mid-request.
-        if (outcome === 'cancelled') {
-          // Ctrl-C means stop the command, not fall through to more prompts.
-          process.exitCode = 130;
-          return;
-        }
-        if (outcome === 'upgraded') {
-          process.exitCode = await rerunUpdateWithUpgradedCli(targetPath, {
-            force: options?.force,
-          });
-          return;
-        }
-        // Declined, failed, or upgraded-but-unreachable: fall through to the
-        // update, then leave the command on screen underneath it.
-        declined = true;
-      }
-
+      const { UpdateCommand } = await import('../core/update.js');
       const updateCommand = new UpdateCommand({ force: options?.force });
       await updateCommand.execute(targetPath);
-
-      if (declined) {
-        // The headline was printed before the prompt; only the manual route is
-        // still owed, and it belongs where the user is looking now.
-        displayUpgradeCommand(targetPath);
-      } else if (latestVersion) {
-        displayCliUpdateNote(latestVersion, targetPath);
-      }
     } catch (error) {
       await failWithError(error);
       process.exit(1);
@@ -522,8 +399,7 @@ changeCmd
       const changeCommand = new ChangeCommand();
       // validate() already sets process.exitCode, and Node honours it at
       // natural exit. Calling process.exit() here would skip commander's
-      // postAction hook — the same trap called out for `update` below — which
-      // kills the telemetry flush and the first-run completions tip on what is
+      // postAction hook, which skips the first-run completions tip on what is
       // a routine outcome, not an error: a change that fails validation.
       await changeCommand.validate(changeName, options);
     } catch (error) {
@@ -615,22 +491,6 @@ program
       await showCommand.execute(itemName, options ?? {});
     } catch (error) {
       await failWithError(error, { enabled: options?.json, fallbackCode: 'show_error' });
-      process.exit(1);
-    }
-  });
-
-// Feedback command
-program
-  .command('feedback <message>')
-  .description('Submit feedback about OpenSpec')
-  .option('--body <text>', 'Detailed description for the feedback')
-  .action(async (message: string, options?: { body?: string }) => {
-    try {
-      const { FeedbackCommand } = await import('../commands/feedback.js');
-      const feedbackCommand = new FeedbackCommand();
-      await feedbackCommand.execute(message, options);
-    } catch (error) {
-      await failWithError(error);
       process.exit(1);
     }
   });
