@@ -32,14 +32,6 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
         name: 'no-animation',
         description: 'Show a static welcome screen instead of the animated one',
       },
-      {
-        name: 'copilot-cloud',
-        description: 'Generate GitHub Copilot cloud coding-agent files (opt-in; default: prompt)',
-      },
-      {
-        name: 'no-copilot-cloud',
-        description: 'Skip generating GitHub Copilot cloud coding-agent files',
-      },
     ],
   },
   {
@@ -57,13 +49,9 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
   },
   {
     name: 'version',
-    description: 'Report the installed OpenSpec version and update availability',
+    description: 'Report the installed OpenSpec version',
     flags: [
       COMMON_FLAGS.json,
-      {
-        name: 'check',
-        description: 'Check the registry for a newer version',
-      },
     ],
   },
   {
@@ -491,19 +479,6 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
           },
           COMMON_FLAGS.json,
         ],
-      },
-    ],
-  },
-  {
-    name: 'feedback',
-    description: 'Submit feedback about OpenSpec',
-    acceptsPositional: true,
-    positionals: [{ name: 'message' }],
-    flags: [
-      {
-        name: 'body',
-        description: 'Detailed description for the feedback',
-        takesValue: true,
       },
     ],
   },
