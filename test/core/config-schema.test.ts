@@ -361,49 +361,27 @@ describe('config-schema', () => {
       expect(result.featureFlags).toEqual({});
     });
 
-    it('should accept telemetry.enabled with passthrough identity fields', () => {
-      const result = GlobalConfigSchema.safeParse({
-        telemetry: {
-          enabled: false,
-          anonymousId: 'keep-me',
-          noticeSeen: true,
-        },
-      });
+    it('should pass a telemetry block left by upstream OpenSpec through unvalidated', () => {
+      const leftover = { enabled: 'nope', anonymousId: 'keep-me', noticeSeen: true };
+      const result = GlobalConfigSchema.safeParse({ telemetry: leftover });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.telemetry).toEqual({
-          enabled: false,
-          anonymousId: 'keep-me',
-          noticeSeen: true,
-        });
+        expect((result.data as Record<string, unknown>).telemetry).toEqual(leftover);
       }
-    });
-
-    it('should reject non-boolean telemetry.enabled', () => {
-      const result = GlobalConfigSchema.safeParse({
-        telemetry: { enabled: 'nope' },
-      });
-      expect(result.success).toBe(false);
     });
   });
 
-  describe('validateConfigKeyPath telemetry', () => {
-    it('allows telemetry.enabled only', () => {
-      expect(validateConfigKeyPath('telemetry.enabled')).toEqual({ valid: true });
-    });
-
+  describe('validateConfigKeyPath runtime and removed keys', () => {
     it('rejects completionTipSeen, which the CLI manages rather than the user', () => {
       // Accepted by the schema (passthrough) so `config validate` stays quiet,
-      // but never settable — it is runtime state, like telemetry.noticeSeen.
+      // but never settable — it is runtime state.
       expect(GlobalConfigSchema.safeParse({ completionTipSeen: true }).success).toBe(true);
       expect(validateConfigKeyPath('completionTipSeen').valid).toBe(false);
     });
 
-    it('rejects bare telemetry and unknown leaves', () => {
+    it('rejects telemetry keys, which this fork removed', () => {
       expect(validateConfigKeyPath('telemetry').valid).toBe(false);
-      expect(validateConfigKeyPath('telemetry.anonymousId').valid).toBe(false);
-      expect(validateConfigKeyPath('telemetry.noticeSeen').valid).toBe(false);
-      expect(validateConfigKeyPath('telemetry.enabled.extra').valid).toBe(false);
+      expect(validateConfigKeyPath('telemetry.enabled').valid).toBe(false);
     });
   });
 
