@@ -174,3 +174,6 @@ opencode.json
 
 # Cursor
 .cursor/
+
+# VSCode Config
+.vscode
