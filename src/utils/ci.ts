@@ -1,9 +1,9 @@
 /**
- * CI environment detection shared by telemetry and the version check.
+ * CI environment detection.
  *
  * Providers set CI to "true", "1", "yes", etc. Only an explicit off-value
- * counts as "not CI", so an unknown value still suppresses outbound requests
- * rather than surprising a build.
+ * counts as "not CI", so an unknown value still reads as CI rather than
+ * surprising a build.
  */
 
 const CI_DISABLED_VALUES = new Set(['', 'false', '0', 'no', 'off']);
