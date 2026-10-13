@@ -25,9 +25,9 @@ For packaging changes:
 
 ```text
 node fork/pack-offline.mjs
-node fork/verify-dawn-starter.mjs
+node fork/verify-example-consumer.mjs
 ```
 
 ## Notes
 
-<!-- Scope limits, upstream-sync considerations, and DAWN example impact. -->
+<!-- Scope limits, upstream-sync considerations, and example consumer impact. -->

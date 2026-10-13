@@ -69,7 +69,7 @@ jobs:
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: pnpm audit --prod --audit-level high
 
-      # Build and test tooling never reaches DAWN's bundled copy of OpenSpec, so an
+      # Build and test tooling never reaches a consumer's bundled copy of OpenSpec, so an
       # advisory here is a scheduled-update item.
       - name: Audit build and test tooling
         continue-on-error: true
