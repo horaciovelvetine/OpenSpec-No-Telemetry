@@ -1,0 +1,23 @@
+{
+	"name": "@your-group/acme",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Example consumer: steering, skills, and hooks for agentic IDEs, with a vendored no-telemetry OpenSpec",
+	"type": "module",
+	"engines": {
+		"node": ">=20.19.0"
+	},
+	"bin": {
+		"acme": "bin/acme.js",
+		"acme-init": "bin/acme-init.js",
+		"openspec": "bin/openspec.js"
+	},
+	"files": [
+		"bin",
+		"lib",
+		"toolkit",
+		"templates",
+		"release.json"
+	],
+	"dependencies": {}
+}

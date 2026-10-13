@@ -1,0 +1,47 @@
+# Sample pipeline for the example consumer. Nothing here reaches a public registry:
+# the vendored OpenSpec tarball carries every dependency, and the example has no others.
+#
+# Needs:
+# - a Node.js 20.19+ image (Debian-based, for curl and sha256sum) mirrored into
+#   your GitLab container registry; public image registries may be unreachable
+# - the project's Generic Package Registry enabled
+
+variables:
+  NODE_IMAGE: '$CI_REGISTRY/your-group/images/node:22'
+  npm_config_audit: 'false'
+  npm_config_fund: 'false'
+  npm_config_update_notifier: 'false'
+
+default:
+  image: $NODE_IMAGE
+
+stages:
+  - test
+  - release
+
+check:
+  stage: test
+  script:
+    - (cd vendor/openspec && sha256sum -c SHA256SUMS)
+    - npm ci --offline
+    - node bin/acme.js --version
+    - node bin/openspec.js --version | grep -E -- '-no-telem\.[0-9]+$'
+
+# Tag vX.Y.Z (matching package.json) to publish a release tarball.
+release:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+  script:
+    - export VERSION="$(node -p "require('./package.json').version")"
+    - test "v$VERSION" = "$CI_COMMIT_TAG" || { echo "Tag $CI_COMMIT_TAG does not match package.json $VERSION"; exit 1; }
+    - (cd vendor/openspec && sha256sum -c SHA256SUMS)
+    - npm ci --offline
+    - export PACKAGE_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/acme/$VERSION/acme-$VERSION.tgz"
+    # Writes release.json (the installer's download URL), bundles OpenSpec, and checks the bundle.
+    - node scripts/pack-release.mjs --url "$PACKAGE_URL" --out .
+    - 'curl --fail --silent --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "acme-$VERSION.tgz" "$PACKAGE_URL"'
+    - echo "Install with npx --yes $PACKAGE_URL"
+  artifacts:
+    paths:
+      - acme-*.tgz

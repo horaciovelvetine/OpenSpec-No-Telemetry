@@ -1,0 +1,4 @@
+node_modules/
+*.tgz
+!vendor/openspec/*.tgz
+release.json
