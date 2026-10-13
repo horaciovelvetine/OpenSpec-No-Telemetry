@@ -11,7 +11,6 @@ import {
   getBulkArchiveChangeSkillTemplate,
   getContinueChangeSkillTemplate,
   getExploreSkillTemplate,
-  getFeedbackSkillTemplate,
   getFfChangeSkillTemplate,
   getNewChangeSkillTemplate,
   getOnboardSkillTemplate,
@@ -98,7 +97,6 @@ const EXPECTED_FUNCTION_HASHES: Record<string, string> = {
   getOpsxVerifyCommandTemplate: 'f47bc0c30cfa8e93b5e42026e9417636c5f15bd8505fb9138872e34af8906abb',
   getOpsxProposeSkillTemplate: '1aa2f2eb9c8cbc4dcab9d777bf8832b92ca04f9ef91d0494f1224a566aefdfe8',
   getOpsxProposeCommandTemplate: '3b7090ce5e79e879ab9b5bdaf4ff2b52e3c02211f71188838772d36ac337f96c',
-  getFeedbackSkillTemplate: 'dabeb5e825b9349abc8156c3e7b8608f27987912a6d9bf47ef29addde6138133',
   getUpdateChangeSkillTemplate: '8380139769cf9b247cb64089c07628e73923405fca4704052d52a67f35526fe8',
   getOpsxUpdateCommandTemplate: 'ec6c8b7f3f366d65a216c4ba423bc41b8dbd18974a432186ad44e60c1891340b',
 };
@@ -118,8 +116,6 @@ const EXPECTED_GENERATED_SKILL_CONTENT_HASHES: Record<string, string> = {
   'openspec-update-change': '5f4ea19aa732b33d87a2120ec393ee34578e70678d97e8c3bb10f988c00cb4d3',
 };
 
-// Intentionally excludes getFeedbackSkillTemplate: this list only models templates
-// deployed via generateSkillContent, while feedback is covered in function payload parity.
 const GENERATED_SKILL_FACTORIES: Array<[string, () => SkillTemplate]> = [
   ['openspec-explore', getExploreSkillTemplate],
   ['openspec-new-change', getNewChangeSkillTemplate],
@@ -225,7 +221,6 @@ describe('skill templates split parity', () => {
       getOpsxVerifyCommandTemplate,
       getOpsxProposeSkillTemplate,
       getOpsxProposeCommandTemplate,
-      getFeedbackSkillTemplate,
       getUpdateChangeSkillTemplate,
       getOpsxUpdateCommandTemplate,
     };
@@ -282,10 +277,6 @@ describe('skill templates split parity', () => {
     for (const entry of getCommandContents()) {
       expect(entry.body, entry.id).toContain(STORE_SELECTION_GUIDANCE);
     }
-
-    // Feedback has no store-capable command and intentionally carries no
-    // store teaching; it ships outside both registries.
-    expect(getFeedbackSkillTemplate().instructions).not.toContain('**Store selection:**');
   });
 
   it('keeps a selected store on every applicable workflow command', () => {
