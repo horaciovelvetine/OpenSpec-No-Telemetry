@@ -191,35 +191,22 @@ describe('declared store fallback (3.2)', () => {
     );
   });
 
-  it('applies explicit Copilot cloud choices without changing the pointer config', async () => {
+  it('installs Copilot integrations without cloud-agent files or pointer config changes', async () => {
     const configPath = path.join(pointerRepo, 'openspec', 'config.yaml');
-    const setupStepsPath = path.join(
-      pointerRepo,
-      '.github',
-      'workflows',
-      'copilot-setup-steps.yml'
-    );
-    const agentPath = path.join(pointerRepo, '.github', 'agents', 'openspec.agent.md');
     const before = fs.readFileSync(configPath, 'utf8');
 
-    const enabled = await runCLI(
-      ['init', '.', '--tools', 'github-copilot', '--copilot-cloud'],
-      { cwd: pointerRepo, env }
+    const result = await runCLI(['init', '.', '--tools', 'github-copilot'], {
+      cwd: pointerRepo,
+      env,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      fs.existsSync(path.join(pointerRepo, '.github', 'workflows', 'copilot-setup-steps.yml'))
+    ).toBe(false);
+    expect(fs.existsSync(path.join(pointerRepo, '.github', 'agents', 'openspec.agent.md'))).toBe(
+      false
     );
-
-    expect(enabled.exitCode).toBe(0);
-    expect(fs.existsSync(setupStepsPath)).toBe(true);
-    expect(fs.existsSync(agentPath)).toBe(true);
-    expect(fs.readFileSync(configPath, 'utf8')).toBe(before);
-
-    const disabled = await runCLI(
-      ['init', '.', '--tools', 'github-copilot', '--no-copilot-cloud'],
-      { cwd: pointerRepo, env }
-    );
-
-    expect(disabled.exitCode).toBe(0);
-    expect(fs.existsSync(setupStepsPath)).toBe(false);
-    expect(fs.existsSync(agentPath)).toBe(false);
     expect(fs.readFileSync(configPath, 'utf8')).toBe(before);
     expect(fs.existsSync(path.join(pointerRepo, 'openspec', 'specs'))).toBe(false);
   });
