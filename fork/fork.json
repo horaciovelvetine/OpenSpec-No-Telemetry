@@ -1,0 +1,6 @@
+{
+	"description": "Pinned upstream provenance and fork build counter. Update the upstream fields after a tagged sync. Bump build for each new artifact; reset it to 1 when the upstream version changes.",
+	"upstreamCommit": "2500d6da971336167548b53731a35b2127df35ac",
+	"upstreamTag": null,
+	"build": 1
+}
