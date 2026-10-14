@@ -44,17 +44,19 @@ The command installs from `pnpm-lock.yaml`, builds, runs all tests, audits the s
 - `BUILD-INFO.json`
 - `THIRD-PARTY-LICENSES`
 
-`BUILD-INFO.json` is the machine-readable handoff contract. It records the artifact name and checksum, source revision, package entry points and exact symbols, complete supported IDE surface, and verification status.
+`BUILD-INFO.json` is the machine-readable handoff contract. It records the artifact name and checksum, source revision, package entry points and required symbols, complete supported IDE surface, and verification status.
 
 ## Consume it in your project
 
-[`fork/example-consumer/`](fork/example-consumer/) is the tested reference layout. Its vendor command reads the build metadata instead of hardcoding the tarball name:
+[`fork/example-consumer/`](fork/example-consumer/) is the tested reference layout. Copy it out of this fork into your own repository (or model your repo on it), then vendor a build from `fork/out/` as described in [`fork/INTEGRATION.md`](fork/INTEGRATION.md). Do not run the vendor command inside `fork/example-consumer/` in this checkout: it rewrites tracked files and `pack-offline.mjs` refuses a dirty tree.
+
+To verify the example flow without dirtying the fork, run:
 
 ```bash
-cd fork/example-consumer
-node scripts/vendor-openspec.mjs --from ../out
-npm ci --offline
+node fork/verify-example-consumer.mjs
 ```
+
+Per-command fork behavior is documented in [`COMMANDS.md`](COMMANDS.md).
 
 A consumer typically imports:
 
@@ -68,7 +70,7 @@ import {
 } from '@fission-ai/openspec/cli-kit';
 ```
 
-The consumer owns the globally exposed `openspec` shim. The vendored package provides the CLI implementation, schemas, and exact bundled dependency versions. Detailed instructions are in [`fork/INTEGRATION.md`](fork/INTEGRATION.md).
+The consumer owns the globally exposed `openspec` shim. The vendored package provides the CLI implementation, schemas, and bundled dependency versions. Detailed instructions are in [`fork/INTEGRATION.md`](fork/INTEGRATION.md).
 
 ## Development checks
 

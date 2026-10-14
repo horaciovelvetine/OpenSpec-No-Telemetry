@@ -4,9 +4,9 @@ This directory contains the VS Code dev container configuration for OpenSpec dev
 
 ## What's Included
 
-- **Node.js 20 LTS** (>=20.19.0) - TypeScript/JavaScript runtime
-- **pnpm** - Fast, disk space efficient package manager
-- **Git + GitHub CLI** - Version control tools
+- **Node.js 22** (Bookworm image; engines require >=20.19.0) - TypeScript/JavaScript runtime
+- **pnpm** (from `packageManager` in `package.json`) - Fast, disk space efficient package manager
+- **Git** - Version control
 - **VS Code Extensions**:
   - ESLint & Prettier for code quality
   - Vitest Explorer for running tests
@@ -37,7 +37,7 @@ This directory contains the VS Code dev container configuration for OpenSpec dev
 
 3. **Wait for Setup**:
    - The container will build (first time takes a few minutes)
-   - `pnpm install` runs automatically via `postCreateCommand`
+   - `pnpm install --frozen-lockfile` runs automatically via `postCreateCommand`
    - All extensions install automatically
 
 ### Daily Development
@@ -90,3 +90,6 @@ If you modify `.devcontainer/devcontainer.json`:
 **Permission issues:**
 - The container runs as the `node` user (non-root)
 - Files created in the container are owned by this user
+
+**pnpm store mismatch with the host:**
+- Do not bind-mount or reuse `node_modules` between the devcontainer and your host OS. The container uses a Linux pnpm store; a host-mounted `node_modules` can trigger reinstall prompts or wrong native binaries.

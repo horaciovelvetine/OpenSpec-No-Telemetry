@@ -119,7 +119,11 @@ function verify(tarball, tmp) {
 		recursive: true,
 		filter: source => !source.split(path.sep).includes('node_modules'),
 	});
+	// Prefix through a symlink so ownedByThisPackage must realpath both sides.
+	const globalPrefixReal = path.join(tmp, 'global-real');
 	const globalPrefix = path.join(tmp, 'global');
+	fs.mkdirSync(globalPrefixReal, { recursive: true });
+	fs.symlinkSync(globalPrefixReal, globalPrefix);
 	const globalBin = path.join(globalPrefix, 'bin');
 	const home = path.join(tmp, 'home');
 	fs.mkdirSync(path.join(tmp, 'npm-cache'), { recursive: true });
@@ -342,6 +346,24 @@ function verify(tarball, tmp) {
 	console.log(
 		`  ✓ npx install --yes puts acme, acme-init, and openspec ${openspecVersion} on PATH`,
 	);
+
+	const reinstall = run('npx', ['--yes', releaseUrl, 'install'], {
+		cwd: tmp,
+		env: online,
+	});
+	check(
+		reinstall.status === 0,
+		`upgrade reinstall over the same global install failed\n${describe(reinstall)}`,
+	);
+	const openspecVersionAfter = run('openspec', ['--version'], {
+		cwd: tmp,
+		env,
+	}).stdout.trim();
+	check(
+		openspecVersionAfter === openspecVersion,
+		`reinstall changed openspec --version (${openspecVersion} → ${openspecVersionAfter})`,
+	);
+	console.log('  ✓ npx install upgrades over itself when prefix is reached via symlink');
 
 	// 4. acme-init and acme update under the no-network preload.
 	const project = path.join(tmp, 'project');

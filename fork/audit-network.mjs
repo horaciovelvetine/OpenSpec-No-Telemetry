@@ -81,7 +81,7 @@ export const PROCESS_ALLOWLIST = new Map([
 	['src/commands/workset.ts', 'opens a workset in a local editor or agent CLI'],
 	[
 		'src/core/store/git.ts',
-		'local git: init, add, commit, status, rev-parse, remote get-url',
+		'local git: init, add, commit, rm --cached, var, status, remote, remote get-url, ls-files, rev-parse, rev-list',
 	],
 	['src/core/store/operations.ts', 'local git rev-parse --show-toplevel'],
 	[

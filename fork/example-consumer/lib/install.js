@@ -69,7 +69,9 @@ function ownedByThisPackage(bin, modulesDir) {
 			.readFileSync(bin, 'utf-8')
 			.includes(TOOL_PACKAGE.name.replace('/', '\\'));
 	try {
-		return fs.realpathSync(bin).startsWith(packageRoot + path.sep);
+		return fs
+			.realpathSync(bin)
+			.startsWith(fs.realpathSync(packageRoot) + path.sep);
 	} catch {
 		return false;
 	}
@@ -170,10 +172,18 @@ export async function installGlobal(options = {}) {
 		warn(
 			`${layout.binDir} is not on your PATH. Add it so your shell and Kiro can find acme-init and openspec.`,
 		);
-	} else if (path.resolve(onPath) !== path.resolve(bin)) {
-		warn(
-			`${onPath} comes before ${bin} on your PATH, so Kiro would run it. Remove it or reorder PATH.`,
-		);
+	} else {
+		let same = false;
+		try {
+			same = fs.realpathSync(onPath) === fs.realpathSync(bin);
+		} catch {
+			same = path.resolve(onPath) === path.resolve(bin);
+		}
+		if (!same) {
+			warn(
+				`${onPath} comes before ${bin} on your PATH, so Kiro would run it. Remove it or reorder PATH.`,
+			);
+		}
 	}
 
 	fs.writeFileSync(

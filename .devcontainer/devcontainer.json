@@ -7,9 +7,6 @@
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest",
       "ppa": true
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {
-      "version": "latest"
     }
   },
 
@@ -53,7 +50,7 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created
-  "postCreateCommand": "corepack enable && corepack prepare pnpm@latest --activate && pnpm install",
+  "postCreateCommand": "corepack enable && corepack install && pnpm install --frozen-lockfile",
 
   // Configure mounts to preserve SSH keys for git operations
   "mounts": [

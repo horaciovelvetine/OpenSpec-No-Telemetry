@@ -30,6 +30,10 @@ It documents compatibility with the fork; it is not a production deployment temp
 
 ## Developing
 
+Use a **copy** of this folder outside the OpenSpec-No-Telemetry fork (or your own repo modeled on it). Vendoring inside `fork/example-consumer/` in the fork repo rewrites tracked files and breaks `node fork/pack-offline.mjs` on an uncommitted tree. To check the flow from the fork without dirtying it, run `node fork/verify-example-consumer.mjs` at the fork root.
+
+In your consumer copy:
+
 ```bash
 node scripts/vendor-openspec.mjs --from /path/to/OpenSpec-No-Telemetry/fork/out
 git add package.json package-lock.json vendor/openspec

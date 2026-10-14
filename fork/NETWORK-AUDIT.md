@@ -52,7 +52,7 @@ It also rejects:
 
 | Source | Purpose |
 | --- | --- |
-| `src/core/store/git.ts` | Local git init/add/commit/status/rev-parse/remote get-url/rev-list |
+| `src/core/store/git.ts` | Local git init/add/commit/rm --cached/var/status/remote/remote get-url/ls-files/rev-parse/rev-list |
 | `src/core/store/operations.ts` | Local git repository discovery |
 | `src/commands/config.ts` | Opens `$EDITOR` |
 | `src/commands/workset.ts` | Opens the configured local editor or agent CLI |

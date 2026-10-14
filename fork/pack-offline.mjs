@@ -223,7 +223,7 @@ function main() {
 	}
 
 	step('Installing dependencies from the lockfile');
-	run('pnpm', ['install', '--frozen-lockfile'], {
+	run('pnpm', ['install', '--frozen-lockfile', '--config.confirm-modules-purge=false'], {
 		// Before dependencies exist there is no cross-spawn to resolve Windows
 		// command shims. This is the one dependency-free bootstrap call.
 		shell: process.platform === 'win32',

@@ -66,7 +66,7 @@ Keep:
 - functional and fork contract tests under `test/`
 - build, typecheck, lint, lockfile, audit, and artifact tooling
 - `fork/example-consumer/` as a tested reference layout
-- this runbook, the network report, integration guide, security policy, and license
+- this runbook, the network report, integration guide, [`COMMANDS.md`](COMMANDS.md), and license
 
 Do not restore upstream website/docs/history/release surfaces listed in `REMOVED_PATHS` inside [`fork/audit-network.mjs`](fork/audit-network.mjs). The audit turns this reduced repository shape into a checked policy.
 
@@ -126,7 +126,15 @@ Do not restore upstream website/docs/history/release surfaces listed in `REMOVED
 
 7. Compare `src/core/config.ts` and the command adapter/profile registries with `fork/supported-surface.json`. A new upstream integration is retained and added to the manifest, not pruned.
 
-8. Update `fork/fork.json`, create the verified artifact, and run the example:
+8. Recheck [`COMMANDS.md`](COMMANDS.md) against the new base:
+
+   ```bash
+   git diff --stat <upstreamCommit> HEAD -- src
+   ```
+
+   Update the upstream base commit, fork-changed commands, and version examples as needed.
+
+9. Update `fork/fork.json`, create the verified artifact, and run the example:
 
    ```bash
    node fork/pack-offline.mjs
@@ -148,4 +156,5 @@ Do not restore upstream website/docs/history/release surfaces listed in `REMOVED
 | `fork/INTEGRATION.md` | Example consumer usage |
 | `fork/example-consumer/` | Tested, non-production reference layout |
 | `fork/verify-example-consumer.mjs` | Example drift/pack/install verification |
+| `COMMANDS.md` | Per-command fork vs upstream reference |
 | `src/cli-kit.ts` | Registry-free CLI building blocks for bundled consumers |
