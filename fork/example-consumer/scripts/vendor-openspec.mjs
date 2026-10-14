@@ -12,8 +12,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { REQUIRED_EXPORTS } from '../../artifact-contract.mjs';
-import { reportCliKitLibraryChanges } from '../../vendor-cli-kit-report.mjs';
+import { REQUIRED_EXPORTS } from './artifact-contract.mjs';
+import { reportCliKitLibraryChanges } from './vendor-cli-kit-report.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vendorDir = path.join(root, 'vendor', 'openspec');

@@ -201,7 +201,7 @@ function verify(tarball, tmp) {
 		`the documented vendor command failed\n${describe(vendor)}`,
 	);
 	check(
-		/major version change for commander/.test(vendor.stdout),
+		/major version change for commander/.test(vendor.stdout + vendor.stderr),
 		`the vendor command did not warn about a commander major bump\n${describe(vendor)}`,
 	);
 	const vendorDir = path.join(consumerDir, 'vendor', 'openspec');
