@@ -148,15 +148,27 @@ describe('config command integration', () => {
     });
   });
 
-  it('should reject telemetry keys without --allow-unknown', async () => {
+  it('should ignore telemetry.enabled false as a no-op in this fork', async () => {
     const previousExitCode = process.exitCode;
     process.exitCode = undefined;
 
     try {
       await runConfigCommand(['set', 'telemetry.enabled', 'false']);
+      expect(process.exitCode).toBeUndefined();
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  });
+
+  it('should reject other telemetry keys without --allow-unknown', async () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = undefined;
+
+    try {
+      await runConfigCommand(['set', 'telemetry.anonymousId', 'abc']);
       expect(process.exitCode).toBe(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid configuration key "telemetry.enabled"')
+        expect.stringContaining('telemetry is not supported in this fork')
       );
     } finally {
       process.exitCode = previousExitCode;

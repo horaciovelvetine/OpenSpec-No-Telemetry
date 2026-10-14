@@ -2,7 +2,7 @@
 
 This file covers what each `openspec` command does in this fork and how it differs from upstream OpenSpec.
 
-It describes fork commit `0b640e3`. The upstream base is `2500d6d`: upstream `v1.14.0` plus six unreleased commits (see [`fork/fork.json`](fork/fork.json)). The fork's runtime edits are the files listed by `git diff --stat 2500d6d HEAD -- src`. Any command not covered under [Fork changes](#fork-changes) runs the same code as upstream at that base. Recheck this file after each upstream sync.
+It describes the current fork on `main` after the `v1.14.1` sync. The upstream base is `87c3595` (`v1.14.1`; see [`fork/fork.json`](fork/fork.json)). The fork's runtime edits are the files listed by `git diff --stat 87c3595 HEAD -- src`, plus fork-owned modules under `src/fork/`. Any command not covered under [Fork changes](#fork-changes) runs the same code as upstream at that base. Recheck this file after each upstream sync.
 
 Upstream marks stores, references, and worksets as beta, so their flags, file formats, and JSON output may change between releases.
 
@@ -48,23 +48,24 @@ Every command, changed or not, also lost upstream's telemetry.
 |             | Upstream                                                                                                 | Fork                                           |
 |-------------|----------------------------------------------------------------------------------------------------------|------------------------------------------------|
 | Text output | Version plus the detected package manager and install scope, for example `OpenSpec 1.14.0 (npm, global)` | `OpenSpec <version>`                           |
-| `--check`   | Asked the npm registry for a newer release                                                               | Removed: `error: unknown option '--check'`     |
+| `--check`   | Asked the npm registry for a newer release                                                               | Removed: fails with a message that the fork removed the registry check |
 | `--json`    | `schemaVersion`, `version`, `install`, and `update` when `--check` was passed                            | `{"schemaVersion": 1, "version": "<version>"}` |
 
 ### Changes to `update`
 
 - No registry lookup, no "newer CLI available" note, and no offer to upgrade through `npm install -g` and rerun. `update` always regenerates files from the installed build. To get newer workflows, vendor a newer fork artifact first, then run `openspec update`.
-- It no longer creates, refreshes, or deletes GitHub Copilot cloud-agent files.
+- It no longer creates or refreshes GitHub Copilot cloud-agent files. It removes unmodified upstream copies and warns on customized leftovers (same as `init`).
 
 ### Changes to `init`
 
-- `--copilot-cloud` and `--no-copilot-cloud` are gone, along with the interactive question about GitHub Copilot cloud coding-agent files. Either flag now fails with `error: unknown option`.
+- `--copilot-cloud` fails before writing anything, with a message that the fork removed hosted cloud-agent setup. `--no-copilot-cloud` is accepted as a no-op for legacy scripts. The interactive question about cloud-agent files is gone.
+- Before tool detection, `init` removes unmodified upstream Copilot cloud-agent files and warns on customized copies (see [Leftovers from an upstream install](#leftovers-from-an-upstream-install)).
 - GitHub Copilot in the editor is still supported: `.github/skills/openspec-*/SKILL.md` and `.github/prompts/opsx-*.prompt.md`.
 - `githubCopilot.cloudAgent` in `openspec/config.yaml` is no longer read. A leftover `githubCopilot:` block is ignored without a warning.
 
 ### Changes to `config`
 
-- `telemetry` is no longer a known key, so `openspec config set telemetry.enabled false` fails with `Unknown top-level key "telemetry"`. There is nothing to opt out of.
+- `telemetry` is no longer a known key. `openspec config set telemetry.enabled false` is a no-op with a note. Other `telemetry.*` keys fail with guidance to run `openspec config unset telemetry`.
 - A `telemetry` block written by upstream stays in `config.json`, because unknown keys are preserved. `config list` and `config get` still show it, but nothing reads it. Remove it with `openspec config unset telemetry`.
 
 ### Changes to `feedback`
@@ -81,7 +82,7 @@ Generated completion scripts no longer offer `feedback`, `version --check`, `ini
 |------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
 | `telemetry` block in the global `config.json`                                      | Ignored                                                                                                                                                                                                                                               | `openspec config unset telemetry` |
 | `githubCopilot:` block in `openspec/config.yaml`                                   | Ignored                                                                                                                                                                                                                                               | Delete the block                  |
-| `.github/workflows/copilot-setup-steps.yml` and `.github/agents/openspec.agent.md` | Never removed. They still count as signs of GitHub Copilot, so `init` without `--tools` may select Copilot and `update` may report it as a new tool. The workflow installs upstream OpenSpec from the npm registry whenever GitHub's cloud agent runs | Delete both files by hand         |
+| `.github/workflows/copilot-setup-steps.yml` and `.github/agents/openspec.agent.md` | Removed on `init`/`update` when content matches a known upstream template; customized copies are kept with a warning | Delete or adapt customized copies by hand; rerun `init`/`update` after edits |
 
 ### Text that still points upstream
 
@@ -435,7 +436,7 @@ A workset is a named set of folders you open together. Worksets are personal: th
 openspec version [--json]
 ```
 
-Prints `OpenSpec <version>`, or `{"schemaVersion": 1, "version": "<version>"}` with `--json`. A vendored artifact reports `<upstream>-no-telem.<build>`, for example `1.14.0-no-telem.1`. A source checkout reports the `package.json` version, `1.14.0`.
+Prints `OpenSpec <version>`, or `{"schemaVersion": 1, "version": "<version>"}` with `--json`. A vendored artifact reports `<upstream>-no-telem.<build>`, for example `1.14.1-no-telem.1`. A source checkout reports the `package.json` version (`1.14.1` after the `v1.14.1` sync).
 
 Changed in this fork: see [Changes to `version`](#changes-to-version).
 

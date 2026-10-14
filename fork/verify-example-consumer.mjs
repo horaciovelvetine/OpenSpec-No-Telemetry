@@ -163,6 +163,21 @@ function verify(tarball, tmp) {
 			'utf-8',
 		),
 	);
+	fs.mkdirSync(path.join(consumerDir, 'vendor', 'openspec'), {
+		recursive: true,
+	});
+	fs.writeFileSync(
+		path.join(consumerDir, 'vendor', 'openspec', 'BUILD-INFO.json'),
+		`${JSON.stringify({
+			cliKitLibraries: {
+				commander: '13.0.0',
+				chalk: '5.6.2',
+				'@inquirer/prompts': '8.5.2',
+				'cross-spawn': '7.0.6',
+			},
+		})}\n`,
+	);
+
 	const vendorArgs = [
 		'scripts/vendor-openspec.mjs',
 		'--from',
@@ -184,6 +199,10 @@ function verify(tarball, tmp) {
 	check(
 		vendor.status === 0,
 		`the documented vendor command failed\n${describe(vendor)}`,
+	);
+	check(
+		/major version change for commander/.test(vendor.stdout),
+		`the vendor command did not warn about a commander major bump\n${describe(vendor)}`,
 	);
 	const vendorDir = path.join(consumerDir, 'vendor', 'openspec');
 	const tarballName = path.basename(tarball);

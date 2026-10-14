@@ -21,6 +21,10 @@ import type {
   NewChangeOptions,
 } from '../commands/workflow/index.js';
 import { COMMON_FLAGS } from '../core/completions/shared-flags.js';
+import {
+  COPILOT_CLOUD_REMOVED,
+  VERSION_CHECK_REMOVED,
+} from '../fork/removed-features.js';
 
 // Startup cost: every command's implementation, and the packages it uses,
 // loads with `await import()` inside its action. This module and
@@ -147,7 +151,22 @@ program
   .command('version')
   .description('Report the installed OpenSpec version')
   .option('--json', 'Output as JSON')
-  .action((options: { json?: boolean }) => {
+  .addOption(new Option('--check', VERSION_CHECK_REMOVED).hideHelp())
+  .action(async (options: { json?: boolean; check?: boolean }) => {
+    if (options.check) {
+      const error = new Error(VERSION_CHECK_REMOVED);
+      if (options.json) {
+        await failWithError(error, {
+          enabled: true,
+          payload: { schemaVersion: 1, version },
+        });
+        return;
+      }
+      console.error(`Error: ${VERSION_CHECK_REMOVED}`);
+      process.exitCode = 1;
+      return;
+    }
+
     if (options.json) {
       console.log(JSON.stringify({ schemaVersion: 1, version }, null, 2));
       return;
@@ -193,8 +212,19 @@ program
   .option('--force', 'Auto-cleanup legacy files without prompting')
   .option('--profile <profile>', 'Override global config profile (core or custom)')
   .option('--no-animation', 'Show a static welcome screen instead of the animated one')
-  .action(async (targetPath = '.', options?: { tools?: string; language?: string; force?: boolean; profile?: string; animation?: boolean }) => {
+  .addOption(new Option('--copilot-cloud', COPILOT_CLOUD_REMOVED).hideHelp())
+  .addOption(
+    new Option(
+      '--no-copilot-cloud',
+      'Ignored in this fork; Copilot cloud-agent files are never written'
+    ).hideHelp()
+  )
+  .action(async (targetPath = '.', options?: { tools?: string; language?: string; force?: boolean; profile?: string; animation?: boolean; copilotCloud?: boolean }) => {
     try {
+      if (options?.copilotCloud) {
+        throw new Error(COPILOT_CLOUD_REMOVED);
+      }
+
       // Validate that the path is a valid directory
       const resolvedPath = path.resolve(targetPath);
 

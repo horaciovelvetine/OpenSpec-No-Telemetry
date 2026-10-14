@@ -12,6 +12,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { REQUIRED_EXPORTS } from '../../artifact-contract.mjs';
+import { reportCliKitLibraryChanges } from '../../vendor-cli-kit-report.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vendorDir = path.join(root, 'vendor', 'openspec');
@@ -36,6 +38,12 @@ const source = path.resolve(sourceDir);
 const buildInfoPath = path.join(source, 'BUILD-INFO.json');
 if (!fs.existsSync(buildInfoPath)) fail(`${buildInfoPath} does not exist`);
 
+const previousBuildInfoPath = path.join(vendorDir, 'BUILD-INFO.json');
+const previousBuildInfo =
+	fs.existsSync(previousBuildInfoPath) ?
+		JSON.parse(fs.readFileSync(previousBuildInfoPath, 'utf-8'))
+	:	null;
+
 const buildInfo = JSON.parse(fs.readFileSync(buildInfoPath, 'utf-8'));
 if (buildInfo.schemaVersion !== 1)
 	fail(`unsupported BUILD-INFO schema ${buildInfo.schemaVersion}`);
@@ -59,11 +67,7 @@ if (
 ) {
 	fail('BUILD-INFO does not describe a fully verified offline artifact');
 }
-const expectedSymbols = {
-	'./cli': ['runCli'],
-	'./cli-kit': ['Command', 'chalk', 'crossSpawn', 'loadPrompts'],
-};
-for (const [subpath, symbols] of Object.entries(expectedSymbols)) {
+for (const [subpath, symbols] of Object.entries(REQUIRED_EXPORTS)) {
 	if (
 		JSON.stringify(buildInfo.exportedSymbols?.[subpath]) !==
 		JSON.stringify(symbols)
@@ -134,7 +138,12 @@ const install = spawnSync(
 		'--no-fund',
 		'--no-update-notifier',
 	],
-	{ cwd: root, stdio: 'inherit', env: process.env },
+	{
+		cwd: root,
+		stdio: 'inherit',
+		env: process.env,
+		shell: process.platform === 'win32',
+	},
 );
 if (install.error) throw install.error;
 if (install.status !== 0)
@@ -143,3 +152,10 @@ if (install.status !== 0)
 console.log(
 	`Vendored ${buildInfo.package}@${buildInfo.version} (${tarballName})`,
 );
+if (buildInfo.cliKitLibraries) {
+	console.log('Bundled CLI libraries:');
+	reportCliKitLibraryChanges(
+		previousBuildInfo?.cliKitLibraries,
+		buildInfo.cliKitLibraries,
+	);
+}

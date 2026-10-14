@@ -81,6 +81,23 @@ const { checkbox, confirm, select } = await loadPrompts();
 
 Inquirer is loaded lazily because eager imports can keep the event loop alive when stdin is piped. `@fission-ai/openspec/package.json` is also exported for the vendored version.
 
+`BUILD-INFO.json` records the exact bundled versions of these libraries under `cliKitLibraries`. The vendor command prints them and warns when a major version changes.
+
+## Migrating from upstream OpenSpec
+
+When a project or machine used registry OpenSpec before switching to this fork:
+
+1. Uninstall the global upstream package if it still owns the `openspec` command (`npm uninstall -g @fission-ai/openspec`, or let your consumer installer replace it).
+2. Run `openspec update` in each project. This fork removes unmodified upstream Copilot cloud-agent files (`.github/workflows/copilot-setup-steps.yml` and `.github/agents/openspec.agent.md`). If you edited those files, merge your changes elsewhere, then delete them.
+3. Remove a leftover `githubCopilot:` block from `openspec/config.yaml` if present (it is ignored but confusing).
+4. Run `openspec config unset telemetry` to drop a leftover telemetry block from global config.
+5. Run `openspec completion install` so shell completions no longer offer removed commands (`feedback`, `version --check`, `init --copilot-cloud`).
+6. Update automation that relied on removed flags:
+   - `openspec version --check` — fails with an explanation; upgrade through your consumer release instead.
+   - `openspec init --copilot-cloud` — fails with an explanation.
+   - `openspec init --no-copilot-cloud` — accepted as a no-op for scripts.
+   - `openspec config set telemetry.enabled false` — accepted as a no-op; other `telemetry.*` keys fail with guidance to `config unset telemetry`.
+
 ## `acme-init` example
 
 The example maps one IDE (Kiro) to OpenSpec, then starts OpenSpec as a child:
@@ -110,7 +127,7 @@ spawnSync(
 );
 ```
 
-`--tools` makes the call non-interactive, and the child boundary keeps an OpenSpec exit from terminating the parent CLI. Do not pass `--no-copilot-cloud`; that removed option is intentionally rejected.
+`--tools` makes the call non-interactive, and the child boundary keeps an OpenSpec exit from terminating the parent CLI. `--no-copilot-cloud` is accepted as a no-op when present in legacy scripts.
 
 Kiro is only the example's default target. The OpenSpec dependency retains all upstream-supported local IDE/tool integrations, listed in [`supported-surface.json`](supported-surface.json). Extend `lib/ides.js` in your product without rebuilding this fork.
 

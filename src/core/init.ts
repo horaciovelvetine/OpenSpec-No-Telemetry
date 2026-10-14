@@ -234,6 +234,11 @@ export class InitCommand {
     // (e.g. .kimi -> .kimi-code) before detection so they stay recognized.
     migrateLegacyToolDirs(projectPath);
 
+    const { removeCopilotCloudLeftovers } = await import(
+      '../fork/copilot-cloud-leftovers.js'
+    );
+    await removeCopilotCloudLeftovers(projectPath);
+
     // Detect available tools in the project (task 7.1)
     const detectedTools = getAvailableTools(projectPath);
 

@@ -23,7 +23,7 @@ CI and `fork/pack-offline.mjs` run the same gate. The pack pipeline also audits 
 | Version check | npm registry request from update/version |
 | Self-upgrade | `npm install -g @fission-ai/openspec@latest` |
 | Feedback | GitHub issue creation through `gh` |
-| Copilot cloud agent | Hosted workflow/profile that installed upstream OpenSpec |
+| Copilot cloud agent | Hosted workflow/profile that installed upstream OpenSpec. `init` and `update` remove unmodified upstream copies and warn on customized leftovers |
 
 The normal GitHub Copilot prompt adapter remains. So do all other local IDE/tool integrations in `fork/supported-surface.json`.
 
@@ -76,6 +76,8 @@ OpenSpec can print URLs and local diagnostic suggestions such as `git clone`. Pr
   - `commander`: executable-subcommand support; OpenSpec defines none
 
 The direct runtime dependencies are Commander, Inquirer core/prompts, Chalk, Ora, cross-spawn, diff, fast-glob, YAML, and Zod. The bundled tarball carries the exact lockfile-resolved tree.
+
+`@types/node` and `undici-types` also appear in the bundled tree: they satisfy an optional peer of `@inquirer/*` and contain only `.d.ts` files. They have no runtime JavaScript for the static audit to scan.
 
 ## Dynamic verification
 

@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import spawn from 'cross-spawn';
 import { auditPackagedTree } from './audit-network.mjs';
+import { REQUIRED_EXPORTS } from './artifact-contract.mjs';
 
 const forkDir = path.dirname(fileURLToPath(import.meta.url));
 const preload = path.join(forkDir, 'no-network-preload.mjs');
@@ -203,16 +204,20 @@ function verify(tarball, tmp) {
 		'bundled dependencies were not installed inside the package',
 	);
 	const contractScript = path.join(consumer, 'contract.mjs');
+	const cliChecks = REQUIRED_EXPORTS['./cli']
+		.map(
+			symbol =>
+				`if (typeof cli.${symbol} !== 'function') throw new Error('missing cli export ${symbol}');`,
+		)
+		.join('\n');
+	const expectedKit = JSON.stringify(REQUIRED_EXPORTS['./cli-kit']);
 	fs.writeFileSync(
 		contractScript,
 		[
-			"import { createRequire } from 'node:module';",
-			"import { runCli } from '@fission-ai/openspec/cli';",
+			"import * as cli from '@fission-ai/openspec/cli';",
 			"import * as kit from '@fission-ai/openspec/cli-kit';",
-			'const require = createRequire(import.meta.url);',
-			"const pkg = require('@fission-ai/openspec/package.json');",
-			"if (typeof runCli !== 'function') throw new Error('missing runCli');",
-			"const expectedKit = ['Command', 'chalk', 'crossSpawn', 'loadPrompts'];",
+			cliChecks,
+			`const expectedKit = ${expectedKit};`,
 			'const actualKit = Object.keys(kit).sort();',
 			'if (JSON.stringify(actualKit) !== JSON.stringify(expectedKit)) {',
 			"  throw new Error(`unexpected cli-kit exports: ${actualKit.join(', ')}`);",

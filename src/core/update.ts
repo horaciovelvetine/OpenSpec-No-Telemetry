@@ -157,6 +157,11 @@ export class UpdateCommand {
       throw new Error(`No OpenSpec directory found. Run 'openspec init' first.`);
     }
 
+    const { removeCopilotCloudLeftovers } = await import(
+      '../fork/copilot-cloud-leftovers.js'
+    );
+    await removeCopilotCloudLeftovers(resolvedProjectPath);
+
     // 2. Migrate OpenSpec-managed skills left in renamed tool directories
     // (e.g. .kimi -> .kimi-code) so they stay detected and get refreshed,
     // then perform the one-time profile migration if needed before any

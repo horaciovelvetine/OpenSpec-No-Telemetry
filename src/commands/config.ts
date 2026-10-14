@@ -406,6 +406,21 @@ export function configGetCommand(key: string): void {
 }
 
 export function configSetCommand(key: string, value: string, options: { string?: boolean; allowUnknown?: boolean }): void {
+  if (key === 'telemetry.enabled' && value === 'false') {
+    console.log(
+      'Note: telemetry.enabled is ignored in this fork (telemetry was removed).'
+    );
+    return;
+  }
+  if (key === 'telemetry' || key.startsWith('telemetry.')) {
+    console.error(
+      'Error: telemetry is not supported in this fork (telemetry was removed).'
+    );
+    console.error('Run "openspec config unset telemetry" to remove a leftover block from upstream.');
+    process.exitCode = 1;
+    return;
+  }
+
   const allowUnknown = Boolean(options.allowUnknown);
   const keyValidation = validateConfigKeyPath(key);
   // --allow-unknown relaxes the known-key check, but never the prototype-safety check.

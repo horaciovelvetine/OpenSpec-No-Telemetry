@@ -228,3 +228,17 @@ The `change validate`, `archive`, and `--deltas-only` behaviors were reproduced 
 2. Fix items 3, 4, 5, and 6.
 3. Sync to `v1.14.1` (item 2). Then, from a clean tree, run `node fork/pack-offline.mjs` and `node fork/verify-example-consumer.mjs`, and update `COMMANDS.md` for the new base.
 4. Take up the "Worth considering" items as needed, and report the "Inherited from upstream" items upstream.
+
+## Resolution (2026-10-14 implementation)
+
+| Item | Status |
+|------|--------|
+| 1 Example installer upgrade | Fixed `ownedByThisPackage()` realpath handling; verify script reinstalls over a symlinked global prefix |
+| 2 Fork base vs upstream tags | Merged `v1.14.1`; `fork/fork.json` records `87c3595` / `v1.14.1` / build `1` |
+| 3 README dirtying the fork | README and example README direct consumers to copy the example out; in-repo check uses `verify-example-consumer.mjs` |
+| 4 pnpm prompt on store mismatch | `pack-offline.mjs` passes `--config.confirm-modules-purge=false`; devcontainer docs warn against shared `node_modules` |
+| 5 Stale documentation | FORK.md, devcontainer, git allowlist in audit docs, `COMMANDS.md` committed and linked |
+| 6 Copilot cloud-agent leftovers | `src/fork/copilot-cloud-leftovers.ts` on `init`/`update`; migration section in INTEGRATION.md |
+| Worth considering (selected) | `cliKitLibraries` in BUILD-INFO, vendor major-version warnings, Node 20/22/24 example verify matrix, Windows npm spawn in vendor script, type-only package note in NETWORK-AUDIT.md |
+| Worth considering (deferred) | Skill downgrade guard; repoint upstream Learn more/Feedback links |
+| Inherited from upstream | Unchanged; report upstream separately |

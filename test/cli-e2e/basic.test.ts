@@ -133,7 +133,7 @@ describe('openspec CLI e2e basics', () => {
 
       expect(result.exitCode).toBe(1);
       expect(result.stdout).toBe('');
-      expect(result.stderr).toContain("error: unknown option '--check'");
+      expect(result.stderr).toContain('registry version check');
     });
 
     it('rejects upgrades without invoking a package manager', async () => {

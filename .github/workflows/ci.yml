@@ -118,10 +118,14 @@ jobs:
           fi
 
   offline_artifact:
-    name: Verified Offline Artifact
+    name: Verified Offline Artifact (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [test_matrix, lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.19.0', '22', '24']
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -135,16 +139,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20.19.0'
+          node-version: ${{ matrix.node }}
           cache: 'pnpm'
 
       - name: Build and verify the bundled dependency
+        if: matrix.node == '20.19.0'
         run: node fork/pack-offline.mjs
+
+      - name: Download artifact from Node 20 build
+        if: matrix.node != '20.19.0'
+        uses: actions/download-artifact@08e24e6c96ac292d9a23a3885fae3b6b1a8b3b5d # v6.0.0
+        with:
+          name: openspec-offline-${{ github.sha }}
+          path: fork/out/
 
       - name: Verify the example consumer
         run: node fork/verify-example-consumer.mjs
 
       - name: Upload verified artifact
+        if: matrix.node == '20.19.0'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: openspec-offline-${{ github.sha }}

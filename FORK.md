@@ -89,6 +89,8 @@ Do not restore upstream website/docs/history/release surfaces listed in `REMOVED
 
    Keep `src/core/command-generation/adapters/github-copilot.ts` and every other local IDE adapter.
 
+   If `src/core/github-copilot/cloud-agent.ts` reappears during the merge, delete it again and update the hash list in [`src/fork/copilot-cloud-leftovers.ts`](src/fork/copilot-cloud-leftovers.ts) plus the fixtures under `test/fixtures/upstream-copilot-cloud/` when upstream changes those templates.
+
 3. Prefer upstream's lockfile during conflict resolution, then regenerate it after removing upstream-only dev dependencies:
 
    ```bash
@@ -156,5 +158,9 @@ Do not restore upstream website/docs/history/release surfaces listed in `REMOVED
 | `fork/INTEGRATION.md` | Example consumer usage |
 | `fork/example-consumer/` | Tested, non-production reference layout |
 | `fork/verify-example-consumer.mjs` | Example drift/pack/install verification |
+| `fork/artifact-contract.mjs` | Shared BUILD-INFO export and cli-kit library contract |
+| `fork/vendor-cli-kit-report.mjs` | cli-kit version reporting for example vendoring |
 | `COMMANDS.md` | Per-command fork vs upstream reference |
+| `src/fork/copilot-cloud-leftovers.ts` | Removes upstream Copilot cloud-agent leftovers on init/update |
+| `src/fork/removed-features.ts` | Messages for retired upstream flags and config keys |
 | `src/cli-kit.ts` | Registry-free CLI building blocks for bundled consumers |
