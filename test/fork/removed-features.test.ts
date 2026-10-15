@@ -15,9 +15,12 @@ describe('removed upstream features', () => {
 	it('rejects init --copilot-cloud with an explanation', async () => {
 		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'openspec-init-flag-'));
 		tempDirs.push(cwd);
-		const result = await runCLI(['init', '--copilot-cloud', '--tools', 'none'], {
-			cwd,
-		});
+		const result = await runCLI(
+			['init', '--copilot-cloud', '--tools', 'none'],
+			{
+				cwd,
+			},
+		);
 		expect(result.exitCode).toBe(1);
 		expect(result.stderr).toMatch(/Copilot hosted cloud-agent/i);
 	});

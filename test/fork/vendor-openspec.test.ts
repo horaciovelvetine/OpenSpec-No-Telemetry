@@ -2,9 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 describe('vendor-openspec cli-kit reporting', () => {
 	it('warns on a major version change', async () => {
-		const { reportCliKitLibraryChanges } = await import(
-			'../../fork/vendor-cli-kit-report.mjs'
-		);
+		const { reportCliKitLibraryChanges } =
+			await import('../../fork/vendor-cli-kit-report.mjs');
 		const warnings: string[] = [];
 		vi.spyOn(console, 'warn').mockImplementation((msg?: unknown) => {
 			if (typeof msg === 'string') warnings.push(msg);
@@ -26,9 +25,9 @@ describe('vendor-openspec cli-kit reporting', () => {
 			},
 		);
 
-		expect(warnings.some(line => /major version change for commander/.test(line))).toBe(
-			true,
-		);
+		expect(
+			warnings.some(line => /major version change for commander/.test(line)),
+		).toBe(true);
 		vi.restoreAllMocks();
 	});
 });

@@ -20,10 +20,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-	CLI_KIT_LIBRARIES,
-	REQUIRED_EXPORTS,
-} from './artifact-contract.mjs';
+import { CLI_KIT_LIBRARIES, REQUIRED_EXPORTS } from './artifact-contract.mjs';
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -222,11 +219,15 @@ function main() {
 	}
 
 	step('Installing dependencies from the lockfile');
-	run('pnpm', ['install', '--frozen-lockfile', '--config.confirm-modules-purge=false'], {
-		// Before dependencies exist there is no cross-spawn to resolve Windows
-		// command shims. This is the one dependency-free bootstrap call.
-		shell: process.platform === 'win32',
-	});
+	run(
+		'pnpm',
+		['install', '--frozen-lockfile', '--config.confirm-modules-purge=false'],
+		{
+			// Before dependencies exist there is no cross-spawn to resolve Windows
+			// command shims. This is the one dependency-free bootstrap call.
+			shell: process.platform === 'win32',
+		},
+	);
 	spawnSync = require('cross-spawn').sync;
 
 	step('Building');
@@ -386,14 +387,15 @@ function main() {
 		exportedSymbols: REQUIRED_EXPORTS,
 		cliKitLibraries: Object.fromEntries(
 			CLI_KIT_LIBRARIES.map(name => {
-				const dir = name.startsWith('@') ?
-					path.join(
-						stageDir,
-						'node_modules',
-						name.split('/')[0],
-						name.split('/')[1],
-					)
-				:	path.join(stageDir, 'node_modules', name);
+				const dir =
+					name.startsWith('@') ?
+						path.join(
+							stageDir,
+							'node_modules',
+							name.split('/')[0],
+							name.split('/')[1],
+						)
+					:	path.join(stageDir, 'node_modules', name);
 				const { version } = readJson(path.join(dir, 'package.json'));
 				return [name, version];
 			}),

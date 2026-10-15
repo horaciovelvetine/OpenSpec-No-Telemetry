@@ -382,7 +382,9 @@ function verify(tarball, tmp) {
 		openspecVersionAfter === openspecVersion,
 		`reinstall changed openspec --version (${openspecVersion} → ${openspecVersionAfter})`,
 	);
-	console.log('  ✓ npx install upgrades over itself when prefix is reached via symlink');
+	console.log(
+		'  ✓ npx install upgrades over itself when prefix is reached via symlink',
+	);
 
 	// 4. acme-init and acme update under the no-network preload.
 	const project = path.join(tmp, 'project');
