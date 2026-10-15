@@ -8,31 +8,31 @@ Upstream marks stores, references, and worksets as beta, so their flags, file fo
 
 ## Summary
 
-| Command                         | Status                         | Purpose                                                         |
-|---------------------------------|--------------------------------|-----------------------------------------------------------------|
-| [`init`](#init)                 | Changed                        | Create `openspec/` and install skills and commands for AI tools |
-| [`update`](#update)             | Changed                        | Regenerate the installed skills and commands                    |
-| [`config`](#config)             | Changed                        | View and edit the global config                                 |
-| [`list`](#list)                 | Unchanged                      | List changes or specs                                           |
-| [`show`](#show)                 | Unchanged                      | Print a change or spec                                          |
-| [`view`](#view)                 | Unchanged                      | Print a dashboard of changes and specs                          |
-| [`validate`](#validate)         | Unchanged                      | Validate changes and specs                                      |
-| [`archive`](#archive)           | Unchanged                      | Merge a finished change into the specs and archive it           |
-| [`new change`](#new-change)     | Unchanged                      | Scaffold a change                                               |
-| [`status`](#status)             | Unchanged                      | Show artifact progress for a change                             |
-| [`instructions`](#instructions) | Unchanged                      | Print agent instructions for an artifact, apply, or archive     |
-| [`templates`](#templates)       | Unchanged                      | Show a schema's template paths                                  |
-| [`schemas`](#schemas)           | Unchanged                      | List workflow schemas                                           |
-| [`schema`](#schema)             | Unchanged                      | Create, copy, validate, and locate schemas (experimental)       |
-| [`store`](#store)               | Unchanged                      | Create and register stores                                      |
-| [`doctor`](#doctor)             | Unchanged                      | Report root, store, and reference health                        |
-| [`context`](#context)           | Unchanged                      | Print the working set: the root plus referenced stores          |
-| [`workset`](#workset)           | Unchanged                      | Save and open personal sets of folders                          |
-| [`version`](#version)           | Changed                        | Print the installed version                                     |
-| [`completion`](#completion)     | Changed (completion data only) | Install shell completions                                       |
-| [`change`](#change-deprecated)  | Unchanged, deprecated          | Noun-first `show`, `list`, `validate` for changes               |
-| [`spec`](#spec-deprecated)      | Unchanged, deprecated          | Noun-first `show`, `list`, `validate` for specs                 |
-| [`feedback`](#feedback-removed) | Removed                        | Filed an issue on the upstream GitHub repo through `gh`         |
+| Command | Status | Purpose |
+| --- | --- | --- |
+| [`init`](#init) | Changed | Create `openspec/` and install skills and commands for AI tools |
+| [`update`](#update) | Changed | Regenerate the installed skills and commands |
+| [`config`](#config) | Changed | View and edit the global config |
+| [`list`](#list) | Unchanged | List changes or specs |
+| [`show`](#show) | Unchanged | Print a change or spec |
+| [`view`](#view) | Unchanged | Print a dashboard of changes and specs |
+| [`validate`](#validate) | Unchanged | Validate changes and specs |
+| [`archive`](#archive) | Unchanged | Merge a finished change into the specs and archive it |
+| [`new change`](#new-change) | Unchanged | Scaffold a change |
+| [`status`](#status) | Unchanged | Show artifact progress for a change |
+| [`instructions`](#instructions) | Unchanged | Print agent instructions for an artifact, apply, or archive |
+| [`templates`](#templates) | Unchanged | Show a schema's template paths |
+| [`schemas`](#schemas) | Unchanged | List workflow schemas |
+| [`schema`](#schema) | Unchanged | Create, copy, validate, and locate schemas (experimental) |
+| [`store`](#store) | Unchanged | Create and register stores |
+| [`doctor`](#doctor) | Unchanged | Report root, store, and reference health |
+| [`context`](#context) | Unchanged | Print the working set: the root plus referenced stores |
+| [`workset`](#workset) | Unchanged | Save and open personal sets of folders |
+| [`version`](#version) | Changed | Print the installed version |
+| [`completion`](#completion) | Changed (completion data only) | Install shell completions |
+| [`change`](#change-deprecated) | Unchanged, deprecated | Noun-first `show`, `list`, `validate` for changes |
+| [`spec`](#spec-deprecated) | Unchanged, deprecated | Noun-first `show`, `list`, `validate` for specs |
+| [`feedback`](#feedback-removed) | Removed | Filed an issue on the upstream GitHub repo through `gh` |
 
 Every command, changed or not, also lost upstream's telemetry.
 
@@ -45,11 +45,11 @@ Every command, changed or not, also lost upstream's telemetry.
 
 ### Changes to `version`
 
-|             | Upstream                                                                                                 | Fork                                           |
-|-------------|----------------------------------------------------------------------------------------------------------|------------------------------------------------|
-| Text output | Version plus the detected package manager and install scope, for example `OpenSpec 1.14.0 (npm, global)` | `OpenSpec <version>`                           |
-| `--check`   | Asked the npm registry for a newer release                                                               | Removed: fails with a message that the fork removed the registry check |
-| `--json`    | `schemaVersion`, `version`, `install`, and `update` when `--check` was passed                            | `{"schemaVersion": 1, "version": "<version>"}` |
+|  | Upstream | Fork |
+| --- | --- | --- |
+| Text output | Version plus the detected package manager and install scope, for example `OpenSpec 1.14.0 (npm, global)` | `OpenSpec <version>` |
+| `--check` | Asked the npm registry for a newer release | Removed: fails with a message that the fork removed the registry check |
+| `--json` | `schemaVersion`, `version`, `install`, and `update` when `--check` was passed | `{"schemaVersion": 1, "version": "<version>"}` |
 
 ### Changes to `update`
 
@@ -78,10 +78,10 @@ Generated completion scripts no longer offer `feedback`, `version --check`, `ini
 
 ### Leftovers from an upstream install
 
-| Leftover                                                                           | Effect in the fork                                                                                                                                                                                                                                    | Cleanup                           |
-|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
-| `telemetry` block in the global `config.json`                                      | Ignored                                                                                                                                                                                                                                               | `openspec config unset telemetry` |
-| `githubCopilot:` block in `openspec/config.yaml`                                   | Ignored                                                                                                                                                                                                                                               | Delete the block                  |
+| Leftover | Effect in the fork | Cleanup |
+| --- | --- | --- |
+| `telemetry` block in the global `config.json` | Ignored | `openspec config unset telemetry` |
+| `githubCopilot:` block in `openspec/config.yaml` | Ignored | Delete the block |
 | `.github/workflows/copilot-setup-steps.yml` and `.github/agents/openspec.agent.md` | Removed on `init`/`update` when content matches a known upstream template; customized copies are kept with a warning | Delete or adapt customized copies by hand; rerun `init`/`update` after edits |
 
 ### Text that still points upstream
@@ -93,7 +93,7 @@ Generated completion scripts no longer offer `feedback`, `version --check`, `ini
 ### Global options
 
 | Option            | Effect                                  |
-|-------------------|-----------------------------------------|
+| ----------------- | --------------------------------------- |
 | `-V`, `--version` | Print the bare version                  |
 | `--no-color`      | Disable color (sets `NO_COLOR=1`)       |
 | `-h`, `--help`    | Show help for any command or subcommand |
@@ -123,13 +123,13 @@ Most commands prompt only when stdin is a terminal, `--no-interactive` isn't pas
 
 ### Files on your machine
 
-| What           | Location                                                                                                                   |
-|----------------|----------------------------------------------------------------------------------------------------------------------------|
-| Global config  | `$XDG_CONFIG_HOME/openspec/config.json`, else `~/.config/openspec/config.json` (Windows: `%APPDATA%\openspec\config.json`) |
-| Data dir       | `$XDG_DATA_HOME/openspec`, else `~/.local/share/openspec` (Windows: `%LOCALAPPDATA%\openspec`)                             |
-| User schemas   | `<data dir>/schemas/`                                                                                                      |
-| Store registry | `<data dir>/stores/registry.yaml`                                                                                          |
-| Worksets       | `<data dir>/worksets/`                                                                                                     |
+| What | Location |
+| --- | --- |
+| Global config | `$XDG_CONFIG_HOME/openspec/config.json`, else `~/.config/openspec/config.json` (Windows: `%APPDATA%\openspec\config.json`) |
+| Data dir | `$XDG_DATA_HOME/openspec`, else `~/.local/share/openspec` (Windows: `%LOCALAPPDATA%\openspec`) |
+| User schemas | `<data dir>/schemas/` |
+| Store registry | `<data dir>/stores/registry.yaml` |
+| Worksets | `<data dir>/worksets/` |
 
 ## Setup
 
@@ -141,13 +141,13 @@ openspec init [path] [--tools <ids>] [--language <lang>] [--force] [--profile <n
 
 Creates the planning tree in `path` (default: the current directory) and installs OpenSpec skills and commands for the AI tools you pick. In an existing project it keeps your config and refreshes the selected tools.
 
-| Option              | Effect                                                                                                                                   |
-|---------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| `--tools <ids>`     | `all`, `none`, or a comma-separated list of tool ids (`openspec init --help` lists them; `windsurf` maps to `devin`). Skips every prompt |
-| `--language <lang>` | Write a language instruction into the `context` of a new `openspec/config.yaml`. Refuses to edit an existing config                      |
-| `--force`           | Clean up legacy OpenSpec files without asking. Non-interactive runs already do                                                           |
-| `--profile <name>`  | `core` or `custom`, for this run only. Not saved                                                                                         |
-| `--no-animation`    | Show the welcome screen without animation                                                                                                |
+| Option | Effect |
+| --- | --- |
+| `--tools <ids>` | `all`, `none`, or a comma-separated list of tool ids (`openspec init --help` lists them; `windsurf` maps to `devin`). Skips every prompt |
+| `--language <lang>` | Write a language instruction into the `context` of a new `openspec/config.yaml`. Refuses to edit an existing config |
+| `--force` | Clean up legacy OpenSpec files without asking. Non-interactive runs already do |
+| `--profile <name>` | `core` or `custom`, for this run only. Not saved |
+| `--no-animation` | Show the welcome screen without animation |
 
 - Creates `openspec/specs/`, `openspec/changes/`, `openspec/changes/archive/`, and, unless a config exists, `openspec/config.yaml` with `schema: spec-driven` and commented examples.
 - Writes skills to each tool's skills folder and, for tools that support them, `opsx` command files, depending on the delivery mode. Every path is pinned in [`fork/supported-surface.json`](fork/supported-surface.json).
@@ -185,16 +185,16 @@ Changed in this fork: see [Changes to `update`](#changes-to-update).
 openspec config [--scope global] <subcommand>
 ```
 
-| Subcommand                                       | Effect                                                                                                      |
-|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| `path`                                           | Print the config file path                                                                                  |
-| `list [--json]`                                  | Print the settings merged with defaults, plus the effective profile, delivery, and workflows                |
-| `get <key>`                                      | Print one value by dot path, defaults included. Exits 1 when the key has no value                           |
+| Subcommand | Effect |
+| --- | --- |
+| `path` | Print the config file path |
+| `list [--json]` | Print the settings merged with defaults, plus the effective profile, delivery, and workflows |
+| `get <key>` | Print one value by dot path, defaults included. Exits 1 when the key has no value |
 | `set <key> <value> [--string] [--allow-unknown]` | Set a value. `true`, `false`, numbers, and JSON arrays or objects are converted unless `--string` is passed |
-| `unset <key>`                                    | Remove a key                                                                                                |
-| `reset --all [-y]`                               | Replace the file with defaults. Asks first unless `-y`                                                      |
-| `edit`                                           | Open the file in `$EDITOR` (or `$VISUAL`), then validate it                                                 |
-| `profile [core]`                                 | Interactive wizard for delivery and workflows. `core` applies the core workflows without prompting          |
+| `unset <key>` | Remove a key |
+| `reset --all [-y]` | Replace the file with defaults. Asks first unless `-y` |
+| `edit` | Open the file in `$EDITOR` (or `$VISUAL`), then validate it |
+| `profile [core]` | Interactive wizard for delivery and workflows. `core` applies the core workflows without prompting |
 
 - `set` accepts `profile` (`core` or `custom`), `delivery` (`both`, `skills`, or `commands`), `workflows` (a JSON array), `featureFlags.<name>` (a boolean), and `defaultStore` (a store id). Other keys need `--allow-unknown`. Workset `openers` are easiest to edit with `config edit`.
 - After a change inside a project, the profile wizard offers to run `update` immediately. Elsewhere, run `openspec update` in each project.
@@ -224,13 +224,13 @@ openspec show [item] [--type change|spec] [--json] [--no-interactive] [options] 
 
 Prints an active change's `proposal.md` or a spec's `spec.md`. The type is detected; pass `--type` when a change and a spec share a name. With no item, a terminal session prompts; otherwise the command prints suggestions and exits 1. Archived changes can't be shown.
 
-| Option                                 | Applies to      | Effect                                                                                                                         |
-|----------------------------------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------|
-| `--json`                               | Both            | Change: `{id, title, deltaCount, deltas, root}`. Spec: `{id, title, overview, requirementCount, requirements, metadata, root}` |
-| `--diff`                               | Change          | Append per-requirement diffs of the delta specs against the main specs. In JSON, add `diff` or `warning` to MODIFIED deltas    |
-| `--deltas-only`, `--requirements-only` | Change          | Accepted but have no effect; the JSON is the same either way. `--requirements-only` is a deprecated alias                      |
-| `--requirements`, `--no-scenarios`     | Spec, JSON only | Omit scenarios                                                                                                                 |
-| `-r, --requirement <n>`                | Spec, JSON only | Show only requirement `n` (1-based)                                                                                            |
+| Option | Applies to | Effect |
+| --- | --- | --- |
+| `--json` | Both | Change: `{id, title, deltaCount, deltas, root}`. Spec: `{id, title, overview, requirementCount, requirements, metadata, root}` |
+| `--diff` | Change | Append per-requirement diffs of the delta specs against the main specs. In JSON, add `diff` or `warning` to MODIFIED deltas |
+| `--deltas-only`, `--requirements-only` | Change | Accepted but have no effect; the JSON is the same either way. `--requirements-only` is a deprecated alias |
+| `--requirements`, `--no-scenarios` | Spec, JSON only | Omit scenarios |
+| `-r, --requirement <n>` | Spec, JSON only | Show only requirement `n` (1-based) |
 
 Flags meant for the other type print a warning and are ignored.
 
@@ -250,16 +250,16 @@ Prints a one-screen summary: spec and requirement counts, draft changes (no task
 openspec validate [item] [--all | --changes | --specs | --archived] [options] [--store <id>]
 ```
 
-| Option                          | Effect                                                                                                            |
-|---------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `[item]`                        | Validate one change or spec. `--type change` or `--type spec` resolves a name used by both                        |
-| `--all`, `--changes`, `--specs` | Validate everything in scope, in parallel. Needs an existing OpenSpec root                                        |
-| `--archived`                    | Check that every archived change has all its tasks ticked, without rechecking deltas. Useful in a pre-commit hook |
-| `--strict`                      | Fail on warnings as well as errors                                                                                |
-| `--report <full\|findings>`     | Bulk scopes only. `findings` returns just the items that have issues                                              |
-| `--concurrency <n>`             | Number of parallel validations. Defaults to `OPENSPEC_CONCURRENCY`, then 6                                        |
-| `--json`                        | `{items: [{id, type, valid, issues, durationMs}], summary, version, root}`                                        |
-| `--no-interactive`              | Don't prompt when no item is given                                                                                |
+| Option | Effect |
+| --- | --- |
+| `[item]` | Validate one change or spec. `--type change` or `--type spec` resolves a name used by both |
+| `--all`, `--changes`, `--specs` | Validate everything in scope, in parallel. Needs an existing OpenSpec root |
+| `--archived` | Check that every archived change has all its tasks ticked, without rechecking deltas. Useful in a pre-commit hook |
+| `--strict` | Fail on warnings as well as errors |
+| `--report <full\|findings>` | Bulk scopes only. `findings` returns just the items that have issues |
+| `--concurrency <n>` | Number of parallel validations. Defaults to `OPENSPEC_CONCURRENCY`, then 6 |
+| `--json` | `{items: [{id, type, valid, issues, durationMs}], summary, version, root}` |
+| `--no-interactive` | Don't prompt when no item is given |
 
 - Each change delta spec needs `## ADDED`, `## MODIFIED`, `## REMOVED`, or `## RENAMED Requirements` sections, and each requirement needs a `#### Scenario:`. MODIFIED requirements are compared with the main specs, and dropping an existing scenario is an error. A change with no deltas fails unless its `.openspec.yaml` sets `skip_specs: true` next to a valid `schema:`.
 - Each spec needs `## Purpose` and `## Requirements` with at least one requirement. A requirement without a scenario or without SHALL or MUST wording is a warning, so it fails only with `--strict`.
@@ -322,11 +322,11 @@ openspec instructions <artifact|apply|archive> --change <id> [--schema <name>] [
 
 Prints what an agent needs for the next step. `--change` is always required.
 
-| Target                               | Output                                                                                                                                                                                                                                                                                                     |
-|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Target | Output |
+| --- | --- |
 | `<artifact>`, for example `proposal` | The task, project `context` and the artifact's `rules` from `openspec/config.yaml`, an index of referenced stores' specs, dependency files to read first, the output path, schema guidance, and the template. Text mode wraps this in XML-style tags. Missing dependencies produce a warning, not an error |
-| `apply`                              | State (`ready`, `blocked`, or `all_done`), context files, tasks with progress, the schema's apply guidance, and `operations.apply.guidance` from the config                                                                                                                                                |
-| `archive`                            | Read-only archive inputs: project `context` and `operations.archive.guidance`. Nothing is archived                                                                                                                                                                                                         |
+| `apply` | State (`ready`, `blocked`, or `all_done`), context files, tasks with progress, the schema's apply guidance, and `operations.apply.guidance` from the config |
+| `archive` | Read-only archive inputs: project `context` and `operations.archive.guidance`. Nothing is archived |
 
 For an artifact skipped through `skip_specs`, the output is only a warning not to create it.
 
@@ -354,11 +354,11 @@ openspec schema <which|validate|fork|init> [...]
 
 Prints `Note: Schema commands are experimental and may change.` to stderr. Every subcommand works from the current directory and has no `--store`.
 
-| Subcommand                                                                                              | Effect                                                                                                                                                   |
-|---------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `which [name] [--all] [--json]`                                                                         | Show where a schema resolves from and which copies it shadows                                                                                            |
-| `validate [name] [--verbose] [--json]`                                                                  | Check `schema.yaml`, its dependency graph, and its templates. Without a name, checks every project schema                                                |
-| `fork <source> [name] [--force] [--json]`                                                               | Copy a schema to `openspec/schemas/<name>/`. The default name is `<source>-custom`                                                                       |
+| Subcommand | Effect |
+| --- | --- |
+| `which [name] [--all] [--json]` | Show where a schema resolves from and which copies it shadows |
+| `validate [name] [--verbose] [--json]` | Check `schema.yaml`, its dependency graph, and its templates. Without a name, checks every project schema |
+| `fork <source> [name] [--force] [--json]` | Copy a schema to `openspec/schemas/<name>/`. The default name is `<source>-custom` |
 | `init <name> [--description <text>] [--artifacts <ids>] [--default \| --no-default] [--force] [--json]` | Create a project schema from `proposal`, `specs`, `design`, and `tasks` (all four by default). `--default` sets it as `schema` in `openspec/config.yaml` |
 
 Schemas resolve from `openspec/schemas/<name>/`, then `<data dir>/schemas/<name>/`, then the package's `schemas/`.
@@ -373,14 +373,14 @@ A store is a standalone OpenSpec repo registered on this machine, so other comma
 openspec store <setup|register|unregister|remove|list|ls|doctor> [...]
 ```
 
-| Subcommand                                                                          | Effect                                                                                                                                                                                                                                                    |
-|-------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Subcommand | Effect |
+| --- | --- |
 | `setup [id] [--path <dir>] [--init-git \| --no-init-git] [--remote <url>] [--json]` | Create a store: scaffold `openspec/`, write `.openspec-store/store.yaml` (`version`, `id`, and optional `remote`), run `git init` and an initial commit (the default for new stores), and register it. Without a terminal, `id` and `--path` are required |
-| `register [path] [--id <id>] [--yes] [--json]`                                      | Register an existing OpenSpec root. Creating a missing `store.yaml` needs `--yes` or a yes at the prompt. Never commits                                                                                                                                   |
-| `unregister <id> [--json]`                                                          | Forget the registration and keep the files                                                                                                                                                                                                                |
-| `remove <id> [--yes] [--json]`                                                      | Forget the registration and delete the folder. Refuses a folder without a matching `store.yaml` or one that contains another registered store. It doesn't check for uncommitted or unpushed work                                                          |
-| `list`, `ls [--json]`                                                               | List registered stores                                                                                                                                                                                                                                    |
-| `doctor [id] [--json]`                                                              | Check each store's folder, OpenSpec root, metadata, and local Git state. Findings exit 0                                                                                                                                                                  |
+| `register [path] [--id <id>] [--yes] [--json]` | Register an existing OpenSpec root. Creating a missing `store.yaml` needs `--yes` or a yes at the prompt. Never commits |
+| `unregister <id> [--json]` | Forget the registration and keep the files |
+| `remove <id> [--yes] [--json]` | Forget the registration and delete the folder. Refuses a folder without a matching `store.yaml` or one that contains another registered store. It doesn't check for uncommitted or unpushed work |
+| `list`, `ls [--json]` | List registered stores |
+| `doctor [id] [--json]` | Check each store's folder, OpenSpec root, metadata, and local Git state. Findings exit 0 |
 
 - `setup` refuses a path inside another Git repository unless `--no-init-git` is passed, and needs a Git commit identity when Git is enabled.
 - Registrations live in `<data dir>/stores/registry.yaml`. Store ids are lowercase kebab-case.
@@ -417,12 +417,12 @@ openspec workset <create|list|ls|open|remove> [...]
 
 A workset is a named set of folders you open together. Worksets are personal: they live in `<data dir>/worksets/worksets.yaml` and are never committed.
 
-| Subcommand                                                                            | Effect                                                                                                                                  |
-|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Subcommand | Effect |
+| --- | --- |
 | `create [name] [--member <path> \| --member <name>=<path>]... [--tool <id>] [--json]` | Save a workset. Interactive runs use a short wizard; otherwise pass a name and at least one `--member`. The first member is the primary |
-| `list`, `ls [--json]`                                                                 | Show worksets and their members                                                                                                         |
-| `open <name> [--tool <id>]`                                                           | Regenerate `<data dir>/worksets/<name>.code-workspace` and launch the tool. Missing member folders are skipped. No `--json`             |
-| `remove <name> [--yes] [--json]`                                                      | Delete the workset. Member folders are untouched                                                                                        |
+| `list`, `ls [--json]` | Show worksets and their members |
+| `open <name> [--tool <id>]` | Regenerate `<data dir>/worksets/<name>.code-workspace` and launch the tool. Missing member folders are skipped. No `--json` |
+| `remove <name> [--yes] [--json]` | Delete the workset. Member folders are untouched |
 
 - Built-in tools: `code` (VS Code) and `cursor` open the generated workspace file. `claude` and `codex` attach each member with `--add-dir`, but they are disabled unless `OPENSPEC_ENABLE_CLI_AGENT_OPENERS=1`.
 - Add or adjust tools under `openers` in the global `config.json`. Rows take `style`, `label`, `command`, `args`, and `attach_flag`; a new tool must set `style` to `workspace-file` or `attach-dirs`.
@@ -446,18 +446,18 @@ Changed in this fork: see [Changes to `version`](#changes-to-version).
 openspec completion <generate|install|uninstall> [zsh|bash|fish|powershell]
 ```
 
-| Subcommand                    | Effect                                                                                          |
-|-------------------------------|-------------------------------------------------------------------------------------------------|
-| `generate [shell]`            | Print the completion script to stdout                                                           |
+| Subcommand | Effect |
+| --- | --- |
+| `generate [shell]` | Print the completion script to stdout |
 | `install [shell] [--verbose]` | Install the script and, for zsh, bash, and PowerShell, add a managed block to the shell profile |
-| `uninstall [shell] [-y]`      | Remove the script and the managed block. Asks first unless `-y`                                 |
+| `uninstall [shell] [-y]` | Remove the script and the managed block. Asks first unless `-y` |
 
-| Shell      | Script                                                                                | Profile edit                              |
-|------------|---------------------------------------------------------------------------------------|-------------------------------------------|
-| zsh        | `~/.zsh/completions/_openspec`, or `$ZSH_CUSTOM/completions/_openspec` with Oh My Zsh | Block in `~/.zshrc` (none with Oh My Zsh) |
-| bash       | `~/.local/share/bash-completion/completions/openspec`                                 | Block in `~/.bashrc`                      |
-| fish       | `~/.config/fish/completions/openspec.fish`                                            | None                                      |
-| PowerShell | `OpenSpecCompletion.ps1` next to `$PROFILE`                                           | Block in `$PROFILE`                       |
+| Shell | Script | Profile edit |
+| --- | --- | --- |
+| zsh | `~/.zsh/completions/_openspec`, or `$ZSH_CUSTOM/completions/_openspec` with Oh My Zsh | Block in `~/.zshrc` (none with Oh My Zsh) |
+| bash | `~/.local/share/bash-completion/completions/openspec` | Block in `~/.bashrc` |
+| fish | `~/.config/fish/completions/openspec.fish` | None |
+| PowerShell | `OpenSpecCompletion.ps1` next to `$PROFILE` | Block in `$PROFILE` |
 
 - Without a shell argument, the shell is detected from the parent process (through `ps`) and then `$SHELL`. On macOS and Linux, pass `powershell` explicitly.
 - `OPENSPEC_NO_AUTO_CONFIG=1` skips the `.zshrc` and `.bashrc` edits.
@@ -476,11 +476,11 @@ openspec change <show|list|validate> [...]
 
 Older noun-first forms of `show`, `list`, and `validate` for changes. Each run prints a deprecation warning to stderr. They read `./openspec/` in the current directory only: no ancestor search, no `--store`, and no default store.
 
-| Subcommand                                                         | Effect                                                                                    |
-|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `show [name] [--json] [--deltas-only] [--diff] [--no-interactive]` | Same output as `openspec show <change>`, without the `root` field                         |
-| `list [--json] [--long]`                                           | Change ids. `--long` adds the title, delta count, and task progress. JSON is a bare array |
-| `validate [name] [--strict] [--json] [--no-interactive]`           | Same checks as `openspec validate <change>`. JSON is the bare report                      |
+| Subcommand | Effect |
+| --- | --- |
+| `show [name] [--json] [--deltas-only] [--diff] [--no-interactive]` | Same output as `openspec show <change>`, without the `root` field |
+| `list [--json] [--long]` | Change ids. `--long` adds the title, delta count, and task progress. JSON is a bare array |
+| `validate [name] [--strict] [--json] [--no-interactive]` | Same checks as `openspec validate <change>`. JSON is the bare report |
 
 Use `openspec list`, `openspec show`, and `openspec validate --changes` instead.
 
@@ -492,11 +492,11 @@ openspec spec <show|list|validate> [...]
 
 The same deprecated forms for specs, with the same current-directory-only behavior.
 
-| Subcommand                                                                         | Effect                                                          |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| Subcommand | Effect |
+| --- | --- |
 | `show [id] [--json] [--requirements] [--no-scenarios] [-r <n>] [--no-interactive]` | Same output as `openspec show <spec>`, without the `root` field |
-| `list [--json] [--long]`                                                           | Spec ids. `--long` adds the title and requirement count         |
-| `validate [id] [--strict] [--json] [--no-interactive]`                             | Same checks as `openspec validate <spec>`                       |
+| `list [--json] [--long]` | Spec ids. `--long` adds the title and requirement count |
+| `validate [id] [--strict] [--json] [--no-interactive]` | Same checks as `openspec validate <spec>` |
 
 Use `openspec list --specs`, `openspec show`, and `openspec validate --specs` instead.
 
@@ -508,35 +508,35 @@ Upstream's `openspec feedback <message> [--body <text>]` filed an issue on the u
 
 The fork's audit allows only these process launches, all of them local. See [`fork/NETWORK-AUDIT.md`](fork/NETWORK-AUDIT.md) for the enforced boundary.
 
-| Command                                                                 | Program                                                                                                                  | Purpose                                                 |
-|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| `init`, interactive runs                                                | `defaults` (macOS) or `gsettings` (GNOME)                                                                                | Read the reduced-motion setting                         |
-| `completion` and the first-run tip                                      | `ps`                                                                                                                     | Detect the current shell                                |
-| `config edit`                                                           | `$EDITOR` or `$VISUAL`                                                                                                   | Edit `config.json`                                      |
-| `workset open`, and `workset create` when you choose to open right away | The configured tool, such as `code` or `cursor`                                                                          | Open the workset                                        |
-| `store setup`                                                           | `git rev-parse`, `git var`, `git init`, `git add`, `git commit`, `git rm --cached` (rollback only), `git remote get-url` | Create and commit a store                               |
-| `store register`                                                        | `git remote get-url origin`, and `git rev-parse` when the root is unhealthy                                              | Record the checkout's origin, or explain an empty clone |
-| `store doctor`                                                          | `git rev-parse`, `git status`, `git remote`, `git remote get-url`, `git ls-files`                                        | Report local Git state                                  |
-| `doctor`, store-backed roots                                            | `git remote get-url origin`, `git rev-list`                                                                              | Compare the origin and drift against local refs         |
+| Command | Program | Purpose |
+| --- | --- | --- |
+| `init`, interactive runs | `defaults` (macOS) or `gsettings` (GNOME) | Read the reduced-motion setting |
+| `completion` and the first-run tip | `ps` | Detect the current shell |
+| `config edit` | `$EDITOR` or `$VISUAL` | Edit `config.json` |
+| `workset open`, and `workset create` when you choose to open right away | The configured tool, such as `code` or `cursor` | Open the workset |
+| `store setup` | `git rev-parse`, `git var`, `git init`, `git add`, `git commit`, `git rm --cached` (rollback only), `git remote get-url` | Create and commit a store |
+| `store register` | `git remote get-url origin`, and `git rev-parse` when the root is unhealthy | Record the checkout's origin, or explain an empty clone |
+| `store doctor` | `git rev-parse`, `git status`, `git remote`, `git remote get-url`, `git ls-files` | Report local Git state |
+| `doctor`, store-backed roots | `git remote get-url origin`, `git rev-list` | Compare the origin and drift against local refs |
 
 Suggested commands the CLI prints, such as `git clone ...` or `git checkout ...`, are text only.
 
 ## Environment variables
 
-| Variable                                | Effect                                                                                                              |
-|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| `NO_COLOR`                              | Disable color. `--no-color` sets it                                                                                 |
-| `OPENSPEC_NO_ANIMATION`                 | Static `init` welcome screen                                                                                        |
-| `OPENSPEC_NO_COMPLETIONS=1`             | Never show the completions tip                                                                                      |
-| `OPENSPEC_NO_AUTO_CONFIG=1`             | `completion install` leaves `.zshrc` and `.bashrc` alone                                                            |
-| `OPENSPEC_CONCURRENCY`                  | Default `validate` concurrency (6 when unset)                                                                       |
-| `OPENSPEC_ENABLE_CLI_AGENT_OPENERS=1`   | Allow `claude` and `codex` as workset tools                                                                         |
-| `OPEN_SPEC_INTERACTIVE=0`               | Disable prompts (note the spelling)                                                                                 |
-| `CI`                                    | Any value disables prompts. Any value other than empty, `false`, `0`, `no`, or `off` also hides the completions tip |
-| `EDITOR`, `VISUAL`                      | Editor for `config edit`. `EDITOR` wins when both are set                                                           |
-| `XDG_CONFIG_HOME`, `XDG_DATA_HOME`      | Config and data locations (`APPDATA` and `LOCALAPPDATA` on Windows)                                                 |
-| `CODEX_HOME`                            | Where legacy Codex prompts are cleaned up (default `~/.codex`)                                                      |
-| `SHELL`, `ZSH`, `ZSH_CUSTOM`, `PROFILE` | Shell detection and completion install paths                                                                        |
+| Variable | Effect |
+| --- | --- |
+| `NO_COLOR` | Disable color. `--no-color` sets it |
+| `OPENSPEC_NO_ANIMATION` | Static `init` welcome screen |
+| `OPENSPEC_NO_COMPLETIONS=1` | Never show the completions tip |
+| `OPENSPEC_NO_AUTO_CONFIG=1` | `completion install` leaves `.zshrc` and `.bashrc` alone |
+| `OPENSPEC_CONCURRENCY` | Default `validate` concurrency (6 when unset) |
+| `OPENSPEC_ENABLE_CLI_AGENT_OPENERS=1` | Allow `claude` and `codex` as workset tools |
+| `OPEN_SPEC_INTERACTIVE=0` | Disable prompts (note the spelling) |
+| `CI` | Any value disables prompts. Any value other than empty, `false`, `0`, `no`, or `off` also hides the completions tip |
+| `EDITOR`, `VISUAL` | Editor for `config edit`. `EDITOR` wins when both are set |
+| `XDG_CONFIG_HOME`, `XDG_DATA_HOME` | Config and data locations (`APPDATA` and `LOCALAPPDATA` on Windows) |
+| `CODEX_HOME` | Where legacy Codex prompts are cleaned up (default `~/.codex`) |
+| `SHELL`, `ZSH`, `ZSH_CUSTOM`, `PROFILE` | Shell detection and completion install paths |
 
 No longer read in this fork: `OPENSPEC_TELEMETRY`, `DO_NOT_TRACK`, `OPENSPEC_NO_UPDATE_CHECK`, `npm_config_registry`.
 
