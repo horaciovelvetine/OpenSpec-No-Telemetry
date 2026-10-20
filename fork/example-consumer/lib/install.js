@@ -66,8 +66,7 @@ function isUnderDir(candidate, root) {
 		const resolved = fs.realpathSync(candidate);
 		const resolvedRoot = fs.realpathSync(root);
 		return (
-			resolved === resolvedRoot ||
-			resolved.startsWith(resolvedRoot + path.sep)
+			resolved === resolvedRoot || resolved.startsWith(resolvedRoot + path.sep)
 		);
 	} catch {
 		return false;
@@ -106,10 +105,7 @@ async function resolveConflicts({ binDir, modulesDir }, { yes }) {
 	}
 
 	const bin = openSpecBin(binDir);
-	if (
-		fs.existsSync(bin) &&
-		!isUnderDir(bin, openSpecPackageRoot(modulesDir))
-	) {
+	if (fs.existsSync(bin) && !isUnderDir(bin, openSpecPackageRoot(modulesDir))) {
 		throw new Error(
 			`${bin} belongs to another install (for example Homebrew or a manual link). Remove it, then rerun the acme install.`,
 		);
@@ -119,14 +115,18 @@ async function resolveConflicts({ binDir, modulesDir }, { yes }) {
 function verifyVendorTarball(vendorDir) {
 	const tarballPath = path.join(vendorDir, VENDORED_OPENSPEC.tarball);
 	if (!fs.existsSync(tarballPath)) {
-		throw new Error(`Vendored tarball is missing: ${VENDORED_OPENSPEC.tarball}`);
+		throw new Error(
+			`Vendored tarball is missing: ${VENDORED_OPENSPEC.tarball}`,
+		);
 	}
 	const actualHash = crypto
 		.createHash('sha256')
 		.update(fs.readFileSync(tarballPath))
 		.digest('hex');
 	if (actualHash !== VENDORED_OPENSPEC.sha256) {
-		throw new Error('Vendored OpenSpec checksum does not match BUILD-INFO.json');
+		throw new Error(
+			'Vendored OpenSpec checksum does not match BUILD-INFO.json',
+		);
 	}
 	const sums = fs.readFileSync(path.join(vendorDir, 'SHA256SUMS'), 'utf-8');
 	if (
@@ -236,7 +236,9 @@ export async function installGlobal(options = {}) {
 	console.log(
 		[
 			'',
-			green(`✔ acme ${TOOL_PACKAGE.version} installed with OpenSpec ${version}`),
+			green(
+				`✔ acme ${TOOL_PACKAGE.version} installed with OpenSpec ${version}`,
+			),
 			`  Toolkit: ${toolkit}`,
 			'',
 			'Next, in each project:',
