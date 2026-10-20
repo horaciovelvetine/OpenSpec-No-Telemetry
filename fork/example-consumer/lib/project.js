@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TOOL_PACKAGE, OPENSPEC_PACKAGE } from './environment.js';
+import { TOOL_PACKAGE, VENDORED_OPENSPEC } from './environment.js';
 
 const TEMPLATES = fileURLToPath(
 	new URL('../templates/project', import.meta.url),
@@ -40,7 +40,7 @@ export function writeProjectConfig(projectDir, ides) {
 	const config = {
 		...existing,
 		acme: TOOL_PACKAGE.version,
-		openspec: OPENSPEC_PACKAGE.version,
+		openspec: VENDORED_OPENSPEC.version,
 		ides: ides ?? existing.ides ?? [],
 		updatedAt: new Date().toISOString(),
 	};

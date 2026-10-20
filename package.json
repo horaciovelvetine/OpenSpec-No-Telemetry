@@ -28,10 +28,6 @@
 			"types": "./dist/cli/index.d.ts",
 			"default": "./dist/cli/index.js"
 		},
-		"./cli-kit": {
-			"types": "./dist/cli-kit.d.ts",
-			"default": "./dist/cli-kit.js"
-		},
 		"./package.json": "./package.json"
 	},
 	"bin": {

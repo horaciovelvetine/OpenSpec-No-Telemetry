@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This fork supplies OpenSpec to downstream consumers without publishing or resolving it through an npm registry. A producer machine builds one self-contained tarball; a consuming project vendors that artifact through a local `file:` dependency and bundles it into its own private release (for example a GitLab Generic Package Registry tarball).
+This fork supplies OpenSpec to downstream consumers without publishing or resolving it through an npm registry. A producer machine builds one self-contained tarball; a consuming project vendors that artifact as a plain file, ships it inside its own release, and installs it globally with `npm install -g {tarball} --offline`.
 
 The npm-format archive is intentional. It preserves Node module resolution, package-relative schemas, package metadata, and bundled production dependencies. It is not an npm registry distribution.
 
@@ -18,11 +18,12 @@ The remaining local process launches and the exact audit boundary are documented
 
 ## Dependency surface
 
-Consuming projects use these package exports:
+Consuming projects use these package exports when OpenSpec is installed as a package:
 
-- `@fission-ai/openspec/cli`: `runCli()` for a global `openspec` shim
-- `@fission-ai/openspec/cli-kit`: the reviewed CLI libraries already carried by the bundle
+- `@fission-ai/openspec/cli`: optional `runCli()` for an in-process shim
 - `@fission-ai/openspec/package.json`: the vendored fork version
+
+The fork does not re-export third-party CLI libraries. Consumers declare, pin, bundle, and audit their own dependencies (for example `commander`, `chalk`, `@inquirer/prompts`, and `cross-spawn`).
 
 The broad package root remains for upstream compatibility but is not the recommended CLI entry. [`fork/supported-surface.json`](fork/supported-surface.json) pins every supported tool id, owned skill/command path, command adapter, profile, delivery mode, and intentionally excluded feature.
 
@@ -158,9 +159,7 @@ Do not restore upstream website/docs/history/release surfaces listed in `REMOVED
 | `fork/INTEGRATION.md` | Example consumer usage |
 | `fork/example-consumer/` | Tested, non-production reference layout |
 | `fork/verify-example-consumer.mjs` | Example drift/pack/install verification |
-| `fork/artifact-contract.mjs` | Shared BUILD-INFO export and cli-kit library contract |
-| `fork/vendor-cli-kit-report.mjs` | cli-kit version reporting for example vendoring |
+| `fork/artifact-contract.mjs` | Shared BUILD-INFO `./cli` export contract |
 | `COMMANDS.md` | Per-command fork vs upstream reference |
 | `src/fork/copilot-cloud-leftovers.ts` | Removes upstream Copilot cloud-agent leftovers on init/update |
 | `src/fork/removed-features.ts` | Messages for retired upstream flags and config keys |
-| `src/cli-kit.ts` | Registry-free CLI building blocks for bundled consumers |

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Vendors a verified OpenSpec-No-Telemetry build into this example and
- * creates the lockfile that the sample GitLab pipeline consumes.
+ * Vendors a verified OpenSpec-No-Telemetry build into this example.
  *
  * Usage:
  *   node scripts/vendor-openspec.mjs --from /path/to/OpenSpec-No-Telemetry/fork/out
@@ -10,14 +9,10 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { REQUIRED_EXPORTS } from './artifact-contract.mjs';
-import { reportCliKitLibraryChanges } from './vendor-cli-kit-report.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const vendorDir = path.join(root, 'vendor', 'openspec');
-const manifestPath = path.join(root, 'package.json');
 
 function option(name) {
 	const index = process.argv.indexOf(name);
@@ -38,15 +33,9 @@ const source = path.resolve(sourceDir);
 const buildInfoPath = path.join(source, 'BUILD-INFO.json');
 if (!fs.existsSync(buildInfoPath)) fail(`${buildInfoPath} does not exist`);
 
-const previousBuildInfoPath = path.join(vendorDir, 'BUILD-INFO.json');
-const previousBuildInfo =
-	fs.existsSync(previousBuildInfoPath) ?
-		JSON.parse(fs.readFileSync(previousBuildInfoPath, 'utf-8'))
-	:	null;
-
 const buildInfo = JSON.parse(fs.readFileSync(buildInfoPath, 'utf-8'));
-if (buildInfo.schemaVersion !== 1)
-	fail(`unsupported BUILD-INFO schema ${buildInfo.schemaVersion}`);
+if (buildInfo.schemaVersion !== 2)
+	fail(`unsupported BUILD-INFO schema ${buildInfo.schemaVersion}; need schema 2`);
 if (buildInfo.package !== '@fission-ai/openspec')
 	fail(`unexpected package ${buildInfo.package}`);
 if (typeof buildInfo.forkCommitDirty !== 'boolean') {
@@ -67,19 +56,8 @@ if (
 ) {
 	fail('BUILD-INFO does not describe a fully verified offline artifact');
 }
-for (const [subpath, symbols] of Object.entries(REQUIRED_EXPORTS)) {
-	if (
-		JSON.stringify(buildInfo.exportedSymbols?.[subpath]) !==
-		JSON.stringify(symbols)
-	) {
-		fail(`unsupported ${subpath} API in BUILD-INFO.json`);
-	}
-	if (
-		!buildInfo.exports?.[subpath]?.default ||
-		!buildInfo.exports?.[subpath]?.types
-	) {
-		fail(`BUILD-INFO.json has no complete ${subpath} package export`);
-	}
+if (!buildInfo.bin?.openspec) {
+	fail('BUILD-INFO.json has no bin.openspec entry');
 }
 
 const tarballName = buildInfo.tarball;
@@ -119,43 +97,6 @@ for (const entry of [
 	fs.copyFileSync(path.join(source, entry), path.join(vendorDir, entry));
 }
 
-const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-manifest.dependencies[buildInfo.package] =
-	`file:vendor/openspec/${tarballName}`;
-for (const name of Object.keys(manifest.dependencies)) {
-	if (name !== buildInfo.package) delete manifest.dependencies[name];
-}
-fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-
-const install = spawnSync(
-	'npm',
-	[
-		'install',
-		'--package-lock-only',
-		'--ignore-scripts',
-		'--offline',
-		'--no-audit',
-		'--no-fund',
-		'--no-update-notifier',
-	],
-	{
-		cwd: root,
-		stdio: 'inherit',
-		env: process.env,
-		shell: process.platform === 'win32',
-	},
-);
-if (install.error) throw install.error;
-if (install.status !== 0)
-	fail(`npm lockfile generation exited with ${install.status}`);
-
 console.log(
 	`Vendored ${buildInfo.package}@${buildInfo.version} (${tarballName})`,
 );
-if (buildInfo.cliKitLibraries) {
-	console.log('Bundled CLI libraries:');
-	reportCliKitLibraryChanges(
-		previousBuildInfo?.cliKitLibraries,
-		buildInfo.cliKitLibraries,
-	);
-}

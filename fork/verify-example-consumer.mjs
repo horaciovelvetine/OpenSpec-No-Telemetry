@@ -2,10 +2,10 @@
 /**
  * End-to-end check of fork/example-consumer against a built offline tarball, with
  * no registry anywhere:
- * 1. vendors the tarball into a copy of the example and installs it offline
- * 2. packs the consumer the way its release job does (release.json + bundled OpenSpec)
+ * 1. vendors the tarball into a copy of the example (plain-file model; no lockfile)
+ * 2. packs the consumer the way its release job does (release.json + vendored files)
  * 3. runs `npx <acme tarball>` like a user: a conflicting global OpenSpec stops
- *    the install, `install --yes` removes it, and acme lands on PATH
+ *    the install, `install --yes` installs the fork tarball globally, and acme lands on PATH
  * 4. runs acme-init and acme update in a project under the no-network preload
  *
  * Usage: node fork/verify-example-consumer.mjs [fork/out/<tarball>] [--keep]
@@ -163,19 +163,28 @@ function verify(tarball, tmp) {
 			'utf-8',
 		),
 	);
-	fs.mkdirSync(path.join(consumerDir, 'vendor', 'openspec'), {
-		recursive: true,
-	});
+	const manifestPath = path.join(consumerDir, 'package.json');
+	const manifestBefore = fs.readFileSync(manifestPath, 'utf-8');
+
+	const staleOut = path.join(tmp, 'stale-out');
+	fs.cpSync(path.dirname(tarball), staleOut, { recursive: true });
+	const staleInfo = JSON.parse(
+		fs.readFileSync(path.join(staleOut, 'BUILD-INFO.json'), 'utf-8'),
+	);
+	staleInfo.schemaVersion = 1;
 	fs.writeFileSync(
-		path.join(consumerDir, 'vendor', 'openspec', 'BUILD-INFO.json'),
-		`${JSON.stringify({
-			cliKitLibraries: {
-				commander: '13.0.0',
-				chalk: '5.6.2',
-				'@inquirer/prompts': '8.5.2',
-				'cross-spawn': '7.0.6',
-			},
-		})}\n`,
+		path.join(staleOut, 'BUILD-INFO.json'),
+		`${JSON.stringify(staleInfo, null, 2)}\n`,
+	);
+	const rejectedSchema = run(
+		process.execPath,
+		['scripts/vendor-openspec.mjs', '--from', staleOut],
+		{ cwd: consumerDir, env },
+	);
+	check(
+		rejectedSchema.status !== 0 &&
+			/unsupported BUILD-INFO schema 1/.test(rejectedSchema.stderr),
+		`the vendor command accepted BUILD-INFO schema 1\n${describe(rejectedSchema)}`,
 	);
 
 	const vendorArgs = [
@@ -200,10 +209,6 @@ function verify(tarball, tmp) {
 		vendor.status === 0,
 		`the documented vendor command failed\n${describe(vendor)}`,
 	);
-	check(
-		/major version change for commander/.test(vendor.stdout + vendor.stderr),
-		`the vendor command did not warn about a commander major bump\n${describe(vendor)}`,
-	);
 	const vendorDir = path.join(consumerDir, 'vendor', 'openspec');
 	const tarballName = path.basename(tarball);
 	check(
@@ -211,36 +216,14 @@ function verify(tarball, tmp) {
 		'the vendor command did not copy the artifact',
 	);
 	check(
-		fs.existsSync(path.join(consumerDir, 'package-lock.json')),
-		'the vendor command did not create package-lock.json',
+		manifestBefore === fs.readFileSync(manifestPath, 'utf-8'),
+		'the vendor command changed package.json',
 	);
-	const manifestPath = path.join(consumerDir, 'package.json');
+	check(
+		!fs.existsSync(path.join(consumerDir, 'package-lock.json')),
+		'the vendor command created a lockfile',
+	);
 	const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-	check(
-		manifest.dependencies['@fission-ai/openspec'] ===
-			`file:vendor/openspec/${tarballName}`,
-		'the vendor command did not update the local OpenSpec dependency',
-	);
-
-	const install = run('npm', ['ci', '--offline'], { cwd: consumerDir, env });
-	check(
-		install.status === 0,
-		`offline npm ci of the example consumer failed\n${describe(install)}`,
-	);
-	check(
-		fs.existsSync(
-			path.join(
-				consumerDir,
-				'node_modules',
-				'@fission-ai',
-				'openspec',
-				'node_modules',
-				'commander',
-				'package.json',
-			),
-		),
-		'the vendored OpenSpec did not bring its bundled dependencies',
-	);
 	const acmeVersion = run(process.execPath, ['bin/acme.js', '--version'], {
 		cwd: consumerDir,
 		env,
@@ -251,7 +234,7 @@ function verify(tarball, tmp) {
 		`acme --version failed\n${describe(acmeVersion)}`,
 	);
 	console.log(
-		'  ✓ example vendor command creates a lockfile and npm ci installs offline',
+		'  ✓ example vendor command copies the artifact without npm dependencies',
 	);
 
 	// 2. Pack it with the release job's script, for a URL served from this machine.
@@ -271,14 +254,19 @@ function verify(tarball, tmp) {
 		pack.status === 0 && pack.stdout.trim() === acmeTarball,
 		`scripts/pack-release.mjs failed\n${describe(pack)}`,
 	);
+	const listed = run('tar', ['-tzf', acmeTarball], { cwd: tmp, env });
+	check(listed.status === 0, `could not list the release tarball\n${describe(listed)}`);
+	const entries = listed.stdout.trim().split('\n');
 	check(
-		!(
-			'bundleDependencies' in JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
-		),
-		'pack-release.mjs left bundleDependencies in the committed manifest',
+		entries.some(line => line.includes(`vendor/openspec/${tarballName}`)),
+		'the release tarball is missing the vendored OpenSpec artifact',
+	);
+	check(
+		!entries.some(line => line.startsWith('package/node_modules/')),
+		'the release tarball contains node_modules',
 	);
 	console.log(
-		'  ✓ pack-release.mjs bundles OpenSpec with its dependencies and writes release.json',
+		'  ✓ pack-release.mjs ships vendored OpenSpec files and writes release.json',
 	);
 
 	// 3. A conflicting global OpenSpec stops the install; --yes removes it.
@@ -336,9 +324,24 @@ function verify(tarball, tmp) {
 		installed.status === 0,
 		`npx <release URL> install --yes failed\n${describe(installed)}`,
 	);
+	const globalSpecPkg = path.join(
+		globalPrefix,
+		'lib',
+		'node_modules',
+		'@fission-ai',
+		'openspec',
+		'package.json',
+	);
 	check(
-		!fs.existsSync(fakeUpstream),
-		'the upstream global OpenSpec was not removed',
+		fs.existsSync(globalSpecPkg),
+		'the fork OpenSpec package was not installed globally',
+	);
+	const installedSpecVersion = JSON.parse(
+		fs.readFileSync(globalSpecPkg, 'utf-8'),
+	).version;
+	check(
+		FORK_OPENSPEC_VERSION_SUFFIX.test(installedSpecVersion),
+		`global OpenSpec is ${installedSpecVersion}, not the vendored build`,
 	);
 	for (const bin of ['acme', 'acme-init', 'openspec']) {
 		check(
@@ -358,9 +361,15 @@ function verify(tarball, tmp) {
 		fs.existsSync(path.join(home, '.acme', 'toolkit', 'README.md')),
 		'the toolkit was not copied to ACME_HOME',
 	);
+	const installRecordPath = path.join(home, '.acme', 'install.json');
+	check(fs.existsSync(installRecordPath), 'install.json was not written');
+	const installRecord = JSON.parse(
+		fs.readFileSync(installRecordPath, 'utf-8'),
+	);
 	check(
-		fs.existsSync(path.join(home, '.acme', 'install.json')),
-		'install.json was not written',
+		typeof installRecord.openspecEntry === 'string' &&
+			fs.existsSync(installRecord.openspecEntry),
+		'install.json did not record a valid openspecEntry',
 	);
 	console.log(
 		`  ✓ npx install --yes puts acme, acme-init, and openspec ${openspecVersion} on PATH`,

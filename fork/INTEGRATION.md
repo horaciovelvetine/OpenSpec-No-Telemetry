@@ -14,24 +14,22 @@ In a copy of `fork/example-consumer/` (or your own repo modeled on it), vendor t
 
 ```bash
 node scripts/vendor-openspec.mjs --from /path/to/OpenSpec-No-Telemetry/fork/out
-git add package.json package-lock.json vendor/openspec
-npm ci --offline
+git add vendor/openspec
 ```
 
 The vendor command:
 
-1. requires `BUILD-INFO.json` schema version 1;
-2. rejects a dirty-tree development artifact or one that did not pass network, offline-consumer, and all-tool checks or expose the expected package API;
+1. requires `BUILD-INFO.json` schema version 2;
+2. rejects a dirty-tree development artifact or one that did not pass network, offline-consumer, and all-tool checks;
 3. verifies the tarball against both `BUILD-INFO.json` and `SHA256SUMS`;
 4. copies the tarball, build metadata, checksum, and license notices;
-5. writes the exact local `file:` dependency into `package.json`;
-6. creates `package-lock.json` in npm offline mode.
+5. does not change `package.json` or create a lockfile.
 
-Do not hardcode or rename the artifact. Commit the generated lockfile; the sample GitLab pipeline deliberately runs `npm ci --offline`.
+Do not hardcode or rename the artifact. Commit the vendored files under `vendor/openspec/`.
 
 ## Required package shape
 
-The example is an ES module package with no registry dependencies of its own:
+The example is an ES module package with no registry dependencies:
 
 ```json
 {
@@ -40,48 +38,44 @@ The example is an ES module package with no registry dependencies of its own:
 	"engines": { "node": ">=20.19.0" },
 	"bin": {
 		"acme": "bin/acme.js",
-		"acme-init": "bin/acme-init.js",
-		"openspec": "bin/openspec.js"
+		"acme-init": "bin/acme-init.js"
 	},
-	"dependencies": {
-		"@fission-ai/openspec": "file:vendor/openspec/<name-from-BUILD-INFO>.tgz"
-	}
+	"files": ["bin", "lib", "toolkit", "templates", "vendor/openspec", "release.json"],
+	"dependencies": {}
 }
 ```
 
-The vendor command writes the dependency entry. Do not add `bundleDependencies` to the committed manifest: the release pack script adds it only while packing, after the local dependency is installed.
+Ship the vendored tarball inside your release package. At pack time, include `vendor/openspec/` in the tarball. Do not list the fork in `dependencies`.
 
-## OpenSpec shim
+## Install the fork
 
-The consumer owns the global `openspec` command because generated agent content invokes bare `openspec ...` commands:
+The consumer installer puts the fork on PATH with a global offline install of the vendored tarball:
+
+```bash
+npm install -g vendor/openspec/<name-from-BUILD-INFO>.tgz --offline --ignore-scripts
+```
+
+Generated IDE content invokes bare `openspec ...` commands, so the fork must be a global command after install. The example records the installed entry path in `~/.acme/install.json` as `openspecEntry` and uses it for child processes.
+
+## Optional `./cli` shim
+
+If you embed OpenSpec in-process instead of a global install, import the narrow CLI entry:
 
 ```js
-#!/usr/bin/env node
 import { runCli } from '@fission-ai/openspec/cli';
 
 runCli();
 ```
 
-Use the narrow `./cli` export, not the broad package root.
+Use the `./cli` export, not the broad package root. The offline verification in this fork still tests this path.
 
-## Shared CLI libraries
+## Consumer CLI libraries
 
-Build your CLI with the exact libraries already inside the OpenSpec bundle:
+The fork does not export third-party CLI libraries. Declare and audit your own dependencies (`commander`, `chalk`, `@inquirer/prompts`, `cross-spawn`, and any others your CLI needs).
 
-```js
-import {
-	Command,
-	chalk,
-	crossSpawn,
-	loadPrompts,
-} from '@fission-ai/openspec/cli-kit';
+Pin exact versions, bundle them in your release tarball when you publish to a private registry, and scan them with the same rules as [`fork/audit-network.mjs`](audit-network.mjs). See **Reviewing a dependency change** in [`NETWORK-AUDIT.md`](NETWORK-AUDIT.md).
 
-const { checkbox, confirm, select } = await loadPrompts();
-```
-
-Inquirer is loaded lazily because eager imports can keep the event loop alive when stdin is piped. `@fission-ai/openspec/package.json` is also exported for the vendored version.
-
-`BUILD-INFO.json` records the exact bundled versions of these libraries under `cliKitLibraries`. The vendor command prints them and warns when a major version changes.
+The example consumer uses Node built-ins only (`util.parseArgs`, `util.styleText`, `readline/promises`, `child_process`) so it stays registry-free.
 
 ## Migrating from upstream OpenSpec
 
@@ -100,36 +94,18 @@ When a project or machine used registry OpenSpec before switching to this fork:
 
 ## `acme-init` example
 
-The example maps one IDE (Kiro) to OpenSpec, then starts OpenSpec as a child:
+The example maps one IDE (Kiro) to OpenSpec, then starts the globally installed OpenSpec as a child through `openspecEntry` from `install.json`:
 
 ```js
-spawnSync(
-	process.execPath,
-	[
-		openspecShim,
-		'init',
-		projectDir,
-		'--tools',
-		'kiro',
-		'--profile',
-		'core',
-		'--force',
-		'--no-animation',
-	],
-	{
-		stdio: 'inherit',
-		env: {
-			...process.env,
-			OPEN_SPEC_INTERACTIVE: '0',
-			OPENSPEC_NO_COMPLETIONS: '1',
-		},
-	},
-);
+spawnSync(process.execPath, [openspecEntry, 'init', projectDir, '--tools', 'kiro', ...], {
+  stdio: 'inherit',
+  env: { ...process.env, OPEN_SPEC_INTERACTIVE: '0', OPENSPEC_NO_COMPLETIONS: '1' },
+});
 ```
 
-`--tools` makes the call non-interactive, and the child boundary keeps an OpenSpec exit from terminating the parent CLI. `--no-copilot-cloud` is accepted as a no-op when present in legacy scripts.
+`--tools` makes the call non-interactive, and the child boundary keeps an OpenSpec exit from terminating the parent CLI.
 
-Kiro is only the example's default target. The OpenSpec dependency retains all upstream-supported local IDE/tool integrations, listed in [`supported-surface.json`](supported-surface.json). Extend `lib/ides.js` in your product without rebuilding this fork.
+Kiro is only the example's default target. The fork retains all upstream-supported local IDE/tool integrations, listed in [`supported-surface.json`](supported-surface.json). Extend `lib/ides.js` in your product without rebuilding this fork.
 
 ## What the example verifies
 
@@ -141,9 +117,10 @@ node fork/verify-example-consumer.mjs
 
 Against the current artifact it checks:
 
-- vendor metadata and checksum validation;
-- offline lockfile generation and `npm ci --offline`;
-- release packing with nested OpenSpec dependencies;
+- vendor metadata and checksum validation (schema 2);
+- plain-file vendoring without a lockfile or npm dependency on the fork;
+- release packing with vendored OpenSpec files inside the consumer tarball;
+- global install of the fork tarball alone (`npm install -g … --offline`);
 - the example npx/global-bin flow against a local release server;
 - `acme-init`, `acme update`, Kiro output, version stamping, and preservation of customized project files;
 - no runtime network attempt during project setup/update.
@@ -157,6 +134,7 @@ When copying `example-consumer/` into your own repository, replace at least:
 - **Package identity** — scope and name in `package.json`, and every `acme` token (bins, env vars such as `ACME_HOME`, `~/.acme`, `.acme/project.json`, release tarball names).
 - **IDE list** — entries in `lib/ides.js` and default `--ide` behavior.
 - **Content** — `toolkit/` and `templates/project/` steering, skills, and hooks.
+- **CLI libraries** — the example uses Node built-ins; your product will declare its own pinned dependencies.
 - **Release host** — `.gitlab-ci.yml` image, registry URLs, and authentication (the sample uses GitLab Generic Package Registry).
 - **CI image** — mirror a Node 20.19+ image into a registry your pipeline can reach offline.
 

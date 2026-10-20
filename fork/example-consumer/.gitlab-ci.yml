@@ -1,5 +1,5 @@
 # Sample pipeline for the example consumer. Nothing here reaches a public registry:
-# the vendored OpenSpec tarball carries every dependency, and the example has no others.
+# the example has no npm dependencies; OpenSpec is a plain vendored tarball.
 #
 # Needs:
 # - a Node.js 20.19+ image (Debian-based, for curl and sha256sum) mirrored into
@@ -23,9 +23,11 @@ check:
   stage: test
   script:
     - (cd vendor/openspec && sha256sum -c SHA256SUMS)
-    - npm ci --offline
-    - node bin/acme.js --version
-    - node bin/openspec.js --version | grep -E -- '-no-telem\.[0-9]+$'
+    - node bin/acme.js --version | grep -E -- '-no-telem\.[0-9]+'
+    - export TEST_PREFIX="$CI_PROJECT_DIR/.tmp-prefix"
+    - export FORK_TGZ="vendor/openspec/$(node -p "JSON.parse(require('fs').readFileSync('vendor/openspec/BUILD-INFO.json','utf8')).tarball")"
+    - npm install -g "$FORK_TGZ" --prefix "$TEST_PREFIX" --offline --ignore-scripts --no-audit --no-fund
+    - "$TEST_PREFIX/bin/openspec" --version | grep -E -- '-no-telem\.[0-9]+$'
 
 # Tag vX.Y.Z (matching package.json) to publish a release tarball.
 release:
@@ -36,9 +38,7 @@ release:
     - export VERSION="$(node -p "require('./package.json').version")"
     - test "v$VERSION" = "$CI_COMMIT_TAG" || { echo "Tag $CI_COMMIT_TAG does not match package.json $VERSION"; exit 1; }
     - (cd vendor/openspec && sha256sum -c SHA256SUMS)
-    - npm ci --offline
     - export PACKAGE_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/acme/$VERSION/acme-$VERSION.tgz"
-    # Writes release.json (the installer's download URL), bundles OpenSpec, and checks the bundle.
     - node scripts/pack-release.mjs --url "$PACKAGE_URL" --out .
     - 'curl --fail --silent --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "acme-$VERSION.tgz" "$PACKAGE_URL"'
     - echo "Install with npx --yes $PACKAGE_URL"

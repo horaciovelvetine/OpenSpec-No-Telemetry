@@ -210,20 +210,11 @@ function verify(tarball, tmp) {
 				`if (typeof cli.${symbol} !== 'function') throw new Error('missing cli export ${symbol}');`,
 		)
 		.join('\n');
-	const expectedKit = JSON.stringify(REQUIRED_EXPORTS['./cli-kit']);
 	fs.writeFileSync(
 		contractScript,
-		[
-			"import * as cli from '@fission-ai/openspec/cli';",
-			"import * as kit from '@fission-ai/openspec/cli-kit';",
-			cliChecks,
-			`const expectedKit = ${expectedKit};`,
-			'const actualKit = Object.keys(kit).sort();',
-			'if (JSON.stringify(actualKit) !== JSON.stringify(expectedKit)) {',
-			"  throw new Error(`unexpected cli-kit exports: ${actualKit.join(', ')}`);",
-			'}',
-			'',
-		].join('\n'),
+		["import * as cli from '@fission-ai/openspec/cli';", cliChecks, ''].join(
+			'\n',
+		),
 	);
 	const contract = run(process.execPath, [contractScript], {
 		cwd: consumer,

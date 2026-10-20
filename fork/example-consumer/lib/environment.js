@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -6,7 +7,28 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 
 export const TOOL_PACKAGE = require('../package.json');
-export const OPENSPEC_PACKAGE = require('@fission-ai/openspec/package.json');
+
+const buildInfoPath = fileURLToPath(
+	new URL('../vendor/openspec/BUILD-INFO.json', import.meta.url),
+);
+
+function loadVendoredOpenSpec() {
+	if (!fs.existsSync(buildInfoPath)) {
+		throw new Error(
+			'vendor/openspec is empty. Run scripts/vendor-openspec.mjs --from <fork/out> first.',
+		);
+	}
+	const buildInfo = JSON.parse(fs.readFileSync(buildInfoPath, 'utf-8'));
+	return {
+		version: buildInfo.version,
+		tarball: buildInfo.tarball,
+		package: buildInfo.package,
+		sha256: buildInfo.sha256,
+		bin: buildInfo.bin,
+	};
+}
+
+export const VENDORED_OPENSPEC = loadVendoredOpenSpec();
 
 /** Matches fork artifact versions from pack-offline.mjs (e.g. 1.14.0-no-telem.1). */
 export const FORK_OPENSPEC_VERSION_SUFFIX = /-no-telem\.\d+$/;

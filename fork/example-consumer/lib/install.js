@@ -1,32 +1,27 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { chalk, crossSpawn, loadPrompts } from '@fission-ai/openspec/cli-kit';
 import {
 	TOOL_PACKAGE,
+	VENDORED_OPENSPEC,
 	assertNodeVersion,
 	toolHome,
 	FORK_OPENSPEC_VERSION_SUFFIX,
 } from './environment.js';
-import { warn } from './output.js';
+import { npm } from './npm.js';
+import { confirm } from './prompt.js';
+import { bold, cyan, green, warn } from './output.js';
 
 const isWindows = process.platform === 'win32';
 const OPENSPEC_PACKAGE_NAME = '@fission-ai/openspec';
-const NPM_OFFLINE_FLAGS = ['--no-audit', '--no-fund', '--no-update-notifier'];
-
-function npm(args, { capture = false } = {}) {
-	const result = crossSpawn.sync('npm', args, {
-		encoding: 'utf-8',
-		stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-	});
-	if (result.error) throw result.error;
-	if (result.status !== 0) {
-		throw new Error(
-			`npm ${args.join(' ')} failed (exit ${result.status})${capture ? `\n${result.stderr}` : ''}`,
-		);
-	}
-	return capture ? result.stdout.trim() : '';
-}
+const NPM_OFFLINE_FLAGS = [
+	'--no-audit',
+	'--no-fund',
+	'--no-update-notifier',
+	'--ignore-scripts',
+];
 
 /**
  * The release to install: --from, then $ACME_RELEASE_URL, then the URL the
@@ -62,16 +57,18 @@ function openSpecBin(binDir) {
 	return path.join(binDir, isWindows ? 'openspec.cmd' : 'openspec');
 }
 
-function ownedByThisPackage(bin, modulesDir) {
-	const packageRoot = path.join(modulesDir, TOOL_PACKAGE.name);
-	if (isWindows)
-		return fs
-			.readFileSync(bin, 'utf-8')
-			.includes(TOOL_PACKAGE.name.replace('/', '\\'));
+function openSpecPackageRoot(modulesDir) {
+	return path.join(modulesDir, OPENSPEC_PACKAGE_NAME);
+}
+
+function isUnderDir(candidate, root) {
 	try {
-		return fs
-			.realpathSync(bin)
-			.startsWith(fs.realpathSync(packageRoot) + path.sep);
+		const resolved = fs.realpathSync(candidate);
+		const resolvedRoot = fs.realpathSync(root);
+		return (
+			resolved === resolvedRoot ||
+			resolved.startsWith(resolvedRoot + path.sep)
+		);
 	} catch {
 		return false;
 	}
@@ -86,34 +83,58 @@ async function resolveConflicts({ binDir, modulesDir }, { yes }) {
 	const existing = path.join(modulesDir, OPENSPEC_PACKAGE_NAME, 'package.json');
 	if (fs.existsSync(existing)) {
 		const { version } = JSON.parse(fs.readFileSync(existing, 'utf-8'));
-		const upstream = !FORK_OPENSPEC_VERSION_SUFFIX.test(version);
-		const problem =
-			`A global ${OPENSPEC_PACKAGE_NAME}@${version} owns the openspec command` +
-			(upstream ? ' (upstream OpenSpec, which sends telemetry)' : '') +
-			'. This package installs its own openspec in its place.';
-		const interactive = process.stdin.isTTY && process.stdout.isTTY;
-		let remove = yes;
-		if (!remove && interactive) {
-			const { confirm } = await loadPrompts();
-			remove = await confirm({
-				message: `${problem}\nUninstall it now?`,
-				default: true,
-			});
+		const isFork = FORK_OPENSPEC_VERSION_SUFFIX.test(version);
+		if (isFork) {
+			npm(['uninstall', '-g', OPENSPEC_PACKAGE_NAME, ...NPM_OFFLINE_FLAGS]);
+		} else {
+			const problem =
+				`A global ${OPENSPEC_PACKAGE_NAME}@${version} owns the openspec command` +
+				' (upstream OpenSpec, which sends telemetry)' +
+				'. This package installs its own openspec in its place.';
+			const interactive = process.stdin.isTTY && process.stdout.isTTY;
+			let remove = yes;
+			if (!remove && interactive) {
+				remove = await confirm(`${problem}\nUninstall it now?`, true);
+			}
+			if (!remove) {
+				throw new Error(
+					`${problem}\nRun "npm uninstall -g ${OPENSPEC_PACKAGE_NAME}", or rerun with --yes.`,
+				);
+			}
+			npm(['uninstall', '-g', OPENSPEC_PACKAGE_NAME, ...NPM_OFFLINE_FLAGS]);
 		}
-		if (!remove) {
-			throw new Error(
-				`${problem}\nRun "npm uninstall -g ${OPENSPEC_PACKAGE_NAME}", or rerun with --yes.`,
-			);
-		}
-		npm(['uninstall', '-g', OPENSPEC_PACKAGE_NAME, ...NPM_OFFLINE_FLAGS]);
 	}
 
 	const bin = openSpecBin(binDir);
-	if (fs.existsSync(bin) && !ownedByThisPackage(bin, modulesDir)) {
+	if (
+		fs.existsSync(bin) &&
+		!isUnderDir(bin, openSpecPackageRoot(modulesDir))
+	) {
 		throw new Error(
 			`${bin} belongs to another install (for example Homebrew or a manual link). Remove it, then rerun the acme install.`,
 		);
 	}
+}
+
+function verifyVendorTarball(vendorDir) {
+	const tarballPath = path.join(vendorDir, VENDORED_OPENSPEC.tarball);
+	if (!fs.existsSync(tarballPath)) {
+		throw new Error(`Vendored tarball is missing: ${VENDORED_OPENSPEC.tarball}`);
+	}
+	const actualHash = crypto
+		.createHash('sha256')
+		.update(fs.readFileSync(tarballPath))
+		.digest('hex');
+	if (actualHash !== VENDORED_OPENSPEC.sha256) {
+		throw new Error('Vendored OpenSpec checksum does not match BUILD-INFO.json');
+	}
+	const sums = fs.readFileSync(path.join(vendorDir, 'SHA256SUMS'), 'utf-8');
+	if (
+		!sums.split('\n').includes(`${actualHash}  ${VENDORED_OPENSPEC.tarball}`)
+	) {
+		throw new Error('Vendored OpenSpec checksum does not match SHA256SUMS');
+	}
+	return tarballPath;
 }
 
 /** The first `openspec` on the user's own PATH, ignoring npx's temporary bins. */
@@ -152,21 +173,32 @@ export async function installGlobal(options = {}) {
 
 	await resolveConflicts(layout, options);
 
-	console.log(chalk.bold(`Installing acme from ${source}`));
-	// --prefer-offline reuses the tarball npx already downloaded.
+	console.log(bold(`Installing acme from ${source}`));
 	npm(['install', '-g', source, '--prefer-offline', ...NPM_OFFLINE_FLAGS]);
+
+	const installedRoot = path.join(layout.modulesDir, TOOL_PACKAGE.name);
+	const vendorDir = path.join(installedRoot, 'vendor', 'openspec');
+	const forkTarball = verifyVendorTarball(vendorDir);
+	npm(['install', '-g', forkTarball, '--offline', ...NPM_OFFLINE_FLAGS]);
+
+	const openspecEntry = path.join(
+		openSpecPackageRoot(layout.modulesDir),
+		'bin',
+		'openspec.js',
+	);
+	const check = spawnSync(process.execPath, [openspecEntry, '--version'], {
+		encoding: 'utf-8',
+	});
+	const version = check.stdout?.trim() ?? '';
+	if (check.status !== 0 || !FORK_OPENSPEC_VERSION_SUFFIX.test(version)) {
+		throw new Error(
+			`${openspecEntry} --version printed "${version}"; expected the vendored -no-telem build.`,
+		);
+	}
 
 	const toolkit = copyToolkit(layout.modulesDir);
 
 	const bin = openSpecBin(layout.binDir);
-	const check = crossSpawn.sync(bin, ['--version'], { encoding: 'utf-8' });
-	const version = check.stdout?.trim() ?? '';
-	if (check.status !== 0 || !FORK_OPENSPEC_VERSION_SUFFIX.test(version)) {
-		throw new Error(
-			`${bin} --version printed "${version}"; expected the vendored -no-telem build.`,
-		);
-	}
-
 	const onPath = firstOpenSpecOnPath();
 	if (!onPath) {
 		warn(
@@ -188,19 +220,27 @@ export async function installGlobal(options = {}) {
 
 	fs.writeFileSync(
 		path.join(toolHome(), 'install.json'),
-		`${JSON.stringify({ acme: TOOL_PACKAGE.version, openspec: version, source, installedAt: new Date().toISOString() }, null, 2)}\n`,
+		`${JSON.stringify(
+			{
+				acme: TOOL_PACKAGE.version,
+				openspec: version,
+				openspecEntry,
+				source,
+				installedAt: new Date().toISOString(),
+			},
+			null,
+			2,
+		)}\n`,
 	);
 
 	console.log(
 		[
 			'',
-			chalk.green(
-				`✔ acme ${TOOL_PACKAGE.version} installed with OpenSpec ${version}`,
-			),
+			green(`✔ acme ${TOOL_PACKAGE.version} installed with OpenSpec ${version}`),
 			`  Toolkit: ${toolkit}`,
 			'',
 			'Next, in each project:',
-			`  ${chalk.cyan('acme-init')}`,
+			`  ${cyan('acme-init')}`,
 		].join('\n'),
 	);
 }

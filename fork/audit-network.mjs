@@ -89,10 +89,6 @@ export const PROCESS_ALLOWLIST = new Map([
 		'reads the OS reduced-motion setting (defaults / gsettings)',
 	],
 	['src/utils/shell-detection.ts', 'reads the parent process name with ps'],
-	[
-		'src/cli-kit.ts',
-		're-exports cross-spawn for bundled consumers; spawns nothing itself',
-	],
 ]);
 
 /** Production packages known to touch child_process, none of them for network use. */

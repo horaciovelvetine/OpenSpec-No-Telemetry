@@ -2,7 +2,7 @@
 
 This private fork packages OpenSpec as a self-contained dependency for offline consumers. It is never published to or resolved from an npm registry.
 
-The artifact is an npm-format tarball because consumers use Node's package layout and module resolution. `npm pack`, `npm install --offline`, and a local `file:` dependency are packaging mechanics; they do not publish or fetch this fork.
+The artifact is an npm-format tarball because consumers use Node's package layout and module resolution. `npm pack` and `npm install -g {tarball} --offline` are packaging mechanics; they do not publish or fetch this fork from a registry.
 
 ## Runtime boundary
 
@@ -58,19 +58,7 @@ node fork/verify-example-consumer.mjs
 
 Per-command fork behavior is documented in [`COMMANDS.md`](COMMANDS.md).
 
-A consumer typically imports:
-
-```js
-import { runCli } from '@fission-ai/openspec/cli';
-import {
-	Command,
-	chalk,
-	crossSpawn,
-	loadPrompts,
-} from '@fission-ai/openspec/cli-kit';
-```
-
-The consumer owns the globally exposed `openspec` shim. The vendored package provides the CLI implementation, schemas, and bundled dependency versions. Detailed instructions are in [`fork/INTEGRATION.md`](fork/INTEGRATION.md).
+A consumer vendors the tarball as a plain file, installs it globally with `npm install -g vendor/openspec/{artifact}.tgz --offline`, and puts `openspec` on PATH. For an in-process shim, import `runCli` from `@fission-ai/openspec/cli` after a local install. The consumer declares its own CLI libraries; the fork does not export them. Detailed instructions are in [`fork/INTEGRATION.md`](fork/INTEGRATION.md).
 
 ## Development checks
 

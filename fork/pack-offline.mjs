@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CLI_KIT_LIBRARIES, REQUIRED_EXPORTS } from './artifact-contract.mjs';
+import { REQUIRED_EXPORTS } from './artifact-contract.mjs';
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -326,7 +326,7 @@ function main() {
 	for (const required of [
 		'package.json',
 		'dist/cli/index.js',
-		'dist/cli-kit.js',
+		'bin/openspec.js',
 		'schemas/spec-driven/schema.yaml',
 	]) {
 		if (!packedFiles.has(required)) {
@@ -364,7 +364,7 @@ function main() {
 	);
 
 	const buildInfo = {
-		schemaVersion: 1,
+		schemaVersion: 2,
 		package: stagedManifest.name,
 		version,
 		upstreamVersion: rootPackage.version,
@@ -385,21 +385,7 @@ function main() {
 		engines: stagedManifest.engines,
 		exports: stagedManifest.exports,
 		exportedSymbols: REQUIRED_EXPORTS,
-		cliKitLibraries: Object.fromEntries(
-			CLI_KIT_LIBRARIES.map(name => {
-				const dir =
-					name.startsWith('@') ?
-						path.join(
-							stageDir,
-							'node_modules',
-							name.split('/')[0],
-							name.split('/')[1],
-						)
-					:	path.join(stageDir, 'node_modules', name);
-				const { version } = readJson(path.join(dir, 'package.json'));
-				return [name, version];
-			}),
-		),
+		bin: stagedManifest.bin,
 		supportedSurface: readJson(path.join(forkDir, 'supported-surface.json')),
 		verification: {
 			networkAudit: true,

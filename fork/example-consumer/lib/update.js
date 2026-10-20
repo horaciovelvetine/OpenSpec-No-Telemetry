@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { chalk } from '@fission-ai/openspec/cli-kit';
-import { OPENSPEC_PACKAGE, assertNodeVersion } from './environment.js';
+import { VENDORED_OPENSPEC, assertNodeVersion } from './environment.js';
 import { runOpenSpec } from './openspec.js';
 import {
 	readProjectConfig,
 	writeProjectConfig,
 	writeProjectFiles,
 } from './project.js';
+import { green } from './output.js';
 
 /**
  * After upgrading to a release with a new vendored OpenSpec, refreshes the
@@ -33,8 +33,8 @@ export async function updateProject(target = '.') {
 	console.log(
 		[
 			'',
-			chalk.green(
-				`✔ Project refreshed for OpenSpec ${OPENSPEC_PACKAGE.version}`,
+			green(
+				`✔ Project refreshed for OpenSpec ${VENDORED_OPENSPEC.version}`,
 			),
 			...written.map(file => `  added ${file}`),
 		].join('\n'),

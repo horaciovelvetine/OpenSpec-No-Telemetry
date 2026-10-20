@@ -9,14 +9,14 @@
 	},
 	"bin": {
 		"acme": "bin/acme.js",
-		"acme-init": "bin/acme-init.js",
-		"openspec": "bin/openspec.js"
+		"acme-init": "bin/acme-init.js"
 	},
 	"files": [
 		"bin",
 		"lib",
 		"toolkit",
 		"templates",
+		"vendor/openspec",
 		"release.json"
 	],
 	"dependencies": {}

@@ -58,9 +58,9 @@ It also rejects:
 | `src/commands/workset.ts` | Opens the configured local editor or agent CLI |
 | `src/ui/welcome-screen.ts` | Reads reduced-motion settings with `defaults`/`gsettings` |
 | `src/utils/shell-detection.ts` | Reads the parent process name with `ps` |
-| `src/cli-kit.ts` | Re-exports `cross-spawn` for additional use; does not launch anything |
-
 OpenSpec can print URLs and local diagnostic suggestions such as `git clone`. Printed text is not a network request.
+
+Libraries that a consumer declares for its own CLI (outside this fork) are outside the OpenSpec runtime audit. The consumer must pin, scan, and license them separately.
 
 ## Production dependency result
 
