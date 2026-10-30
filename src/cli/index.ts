@@ -217,7 +217,7 @@ program
     new Option(
       '--no-copilot-cloud',
       'Ignored in this fork; Copilot cloud-agent files are never written'
-    ).hideHelp()
+    )
   )
   .action(async (targetPath = '.', options?: { tools?: string; language?: string; force?: boolean; profile?: string; animation?: boolean; copilotCloud?: boolean }) => {
     try {

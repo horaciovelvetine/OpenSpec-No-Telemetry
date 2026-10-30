@@ -58,7 +58,7 @@ Every command, changed or not, also lost upstream's telemetry.
 
 ### Changes to `init`
 
-- `--copilot-cloud` fails before writing anything, with a message that the fork removed hosted cloud-agent setup. `--no-copilot-cloud` is accepted as a no-op for legacy scripts. The interactive question about cloud-agent files is gone.
+- `--copilot-cloud` fails before writing anything, with a message that the fork removed hosted cloud-agent setup. `--no-copilot-cloud` is accepted as a no-op for legacy scripts and is listed in `init --help`. The interactive question about cloud-agent files is gone.
 - Before tool detection, `init` removes unmodified upstream Copilot cloud-agent files and warns on customized copies (see [Leftovers from an upstream install](#leftovers-from-an-upstream-install)).
 - GitHub Copilot in the editor is still supported: `.github/skills/openspec-*/SKILL.md` and `.github/prompts/opsx-*.prompt.md`.
 - `githubCopilot.cloudAgent` in `openspec/config.yaml` is no longer read. A leftover `githubCopilot:` block is ignored without a warning.
@@ -74,7 +74,7 @@ Removed, along with its implementation and the unused `feedback` skill template.
 
 ### Shell completions
 
-Generated completion scripts no longer offer `feedback`, `version --check`, `init --copilot-cloud`, or `init --no-copilot-cloud`. Rerun `openspec completion install` to replace a script that upstream generated.
+Generated completion scripts no longer offer `feedback`, `version --check`, or `init --copilot-cloud`. They offer `init --no-copilot-cloud` as a no-op flag for legacy scripts. Rerun `openspec completion install` to replace a script that upstream generated.
 
 ### Leftovers from an upstream install
 

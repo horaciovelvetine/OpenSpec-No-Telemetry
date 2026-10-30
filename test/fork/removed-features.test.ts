@@ -34,4 +34,11 @@ describe('removed upstream features', () => {
 		);
 		expect(result.exitCode).toBe(0);
 	});
+
+	it('lists --no-copilot-cloud in init --help and keeps --copilot-cloud hidden', async () => {
+		const result = await runCLI(['init', '--help']);
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout).toContain('--no-copilot-cloud');
+		expect(result.stdout).not.toMatch(/(^|\s)--copilot-cloud\b/);
+	});
 });

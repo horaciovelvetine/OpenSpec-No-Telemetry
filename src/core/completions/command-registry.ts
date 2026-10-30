@@ -32,6 +32,10 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
         name: 'no-animation',
         description: 'Show a static welcome screen instead of the animated one',
       },
+      {
+        name: 'no-copilot-cloud',
+        description: 'Ignored in this fork; Copilot cloud-agent files are never written',
+      },
     ],
   },
   {
